@@ -1,9 +1,8 @@
 # TimeWise
 
-TimeWise – Appointment Scheduler
 A desktop-based appointment scheduler developed in C# for Windows, designed to help users manage their time efficiently with a simple, intuitive interface.
 
-📋 Overview
+#📋 Overview
 TimeWise is a local appointment scheduling application that provides reliable time management without requiring internet access or subscription services. Perfect for individuals, freelancers, and small businesses who need a straightforward scheduling solution.
 
 ✨ Features
