@@ -24,60 +24,50 @@
                    Margin="200,0,0,0"
                    />
 
-            <!--Needs button images-->
-            <Button Content="Settings"
-                    FontSize="20"
+            <!-- Fixed Button with Image -->
+            <Button x:Name="Settings" FontSize="20"
                     Width="100" 
                     Height="40" 
                     Margin="800,0,0,0" 
                     HorizontalAlignment="Center" 
-                    VerticalAlignment="Center"/>
+                    VerticalAlignment="Bottom" Background="{x:Null}" BorderBrush="{x:Null}">
+                <Image Source="/Images/icons/Gear.png"/>
+            </Button>
 
-            <Button Content="DarkMode"
+            <Button x:Name="Darkmode"
                     FontSize="20"
                     Width="100" 
                     Height="40" 
                     Margin="20,0,0,0" 
                     HorizontalAlignment="Center" 
-                    VerticalAlignment="Center"/>
+                    VerticalAlignment="Bottom" Background="{x:Null}" BorderBrush="{x:Null}">
+                <Image Source="/Images/icons/Dark.png"/>
+            </Button>
 
         </StackPanel>
-        <Border Grid.Row="0" 
-                Grid.Column="0" 
-                Grid.ColumnSpan="2"
-                BorderBrush="Black" 
-                BorderThickness="0,0,0,1" 
-                Margin="0,0,0,0"/>
 
 
-        <StackPanel x:Name="SidePanel" Grid.Column="0" Grid.Row="1" Orientation="Vertical">
+        <StackPanel x:Name="SidePanel" Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" Orientation="Vertical" Margin="0,0,0,0">
 
             <Calendar Margin="0,20,0,0" 
                       Grid.Row="1" 
                       Grid.Column="0"/>
+
             <Border BorderBrush="Black" 
                     BorderThickness="1" 
                     Margin="10,10,10,0" 
-                    Background="#FFF0F0F0" RenderTransformOrigin="0.5,0.5">
-                <Border.RenderTransform>
-                    <TransformGroup>
-                        <ScaleTransform/>
-                        <SkewTransform/>
-                        <RotateTransform Angle="-0.139"/>
-                        <TranslateTransform/>
-                    </TransformGroup>
-                </Border.RenderTransform>
-            </Border>
-
+                    Background="#FFF0F0F0" RenderTransformOrigin="0.5,0.5"/>
+            
             <Label Content="Category Filters" 
                    FontSize="20" 
                    FontWeight="Bold" 
                    HorizontalAlignment="Center" 
                    Margin="0,5,0,0"/>
-            <CheckBox Content="Work" Margin="10,5,0,0"/>
-            <CheckBox Content="Personal" Margin="10,5,0,0"/>
-            <CheckBox Content="Health" Margin="10,5,0,0"/>
-            <CheckBox Content="Hobbies" Margin="10,5,0,0"/>
+            
+            <CheckBox Content="Work" Margin="10,5,0,0" Background="Blue"/>
+            <CheckBox Content="Personal" Margin="10,5,0,0" Background="Green"/>
+            <CheckBox Content="Health" Margin="10,5,0,0" Background="Yellow"/>
+            <CheckBox Content="Hobbies" Margin="10,5,0,0" Background="Orange"/>
 
             <TextBox x:Name="SearchBox" 
                      Margin="10,20,10,0" 
@@ -94,26 +84,40 @@
                    FontWeight="Bold" 
                    HorizontalAlignment="Center" 
                    Margin="0,5,0,0"/>
+            
             <TextBox x:Name="NotesBox" 
                      Margin="10,10,10,0" 
                      Height="245" 
                      TextWrapping="Wrap" 
                      VerticalScrollBarVisibility="Auto" 
                      AcceptsReturn="True"/>
+            
             <Border BorderBrush="Black" 
                     BorderThickness="1" 
                     Margin="10,10,10,0" 
                     Background="#FFF0F0F0"/>
+            
             <TextBlock Text="Notes will be saved automatically." 
-                           HorizontalAlignment="Center" 
-                           VerticalAlignment="Center"/>
+                       HorizontalAlignment="Center" 
+                       VerticalAlignment="Center"/>
         </StackPanel>
 
+        <Grid Grid.Row="2" Grid.Column="1">
 
-
-
-
-
+            <TabControl>
+                <TabItem Header="Daily"/>
+                <TabItem Header="Weekly"/>
+            </TabControl>
+            
+            <ScrollViewer>
+                <Border BorderBrush="Black" BorderThickness="2,2,0,0" Margin="10,10,10,10">
+                    <StackPanel Orientation="Vertical">
+                        
+                    </StackPanel>
+                </Border>
+            </ScrollViewer>
+        </Grid>
+        
 
     </Grid>
 </Window>

@@ -8,4 +8,18 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Remove="images\icons\dark.png" />
+    <None Remove="images\icons\gear.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Images\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="images\icons\dark.png" />
+    <Resource Include="images\icons\gear.png" />
+  </ItemGroup>
+
 </Project>
