@@ -57,15 +57,15 @@
                     BorderThickness="1" 
                     Margin="10,10,10,0" 
                     Background="#FFF0F0F0" RenderTransformOrigin="0.5,0.5"/>
-            
+
             <Label Content="Category Filters" 
                    FontSize="20" 
                    FontWeight="Bold" 
                    HorizontalAlignment="Center" 
                    Margin="0,5,0,0"/>
-            
-            <CheckBox Content="Work" Margin="10,5,0,0" Background="Blue"/>
-            <CheckBox Content="Personal" Margin="10,5,0,0" Background="Green"/>
+
+            <CheckBox Content="Work" Margin="10,5,0,0" Background="LightBlue"/>
+            <CheckBox Content="Personal" Margin="10,5,0,0" Background="LightGreen"/>
             <CheckBox Content="Health" Margin="10,5,0,0" Background="Yellow"/>
             <CheckBox Content="Hobbies" Margin="10,5,0,0" Background="Orange"/>
 
@@ -84,40 +84,125 @@
                    FontWeight="Bold" 
                    HorizontalAlignment="Center" 
                    Margin="0,5,0,0"/>
-            
+
             <TextBox x:Name="NotesBox" 
                      Margin="10,10,10,0" 
                      Height="245" 
                      TextWrapping="Wrap" 
                      VerticalScrollBarVisibility="Auto" 
                      AcceptsReturn="True"/>
-            
+
             <Border BorderBrush="Black" 
                     BorderThickness="1" 
                     Margin="10,10,10,0" 
                     Background="#FFF0F0F0"/>
-            
+
             <TextBlock Text="Notes will be saved automatically." 
                        HorizontalAlignment="Center" 
                        VerticalAlignment="Center"/>
         </StackPanel>
 
-        <Grid Grid.Row="2" Grid.Column="1">
+        <Grid Grid.Row="1" Grid.Column="1" Margin="10,0,0,0">
 
-            <TabControl>
-                <TabItem Header="Daily"/>
-                <TabItem Header="Weekly"/>
-            </TabControl>
-            
-            <ScrollViewer>
-                <Border BorderBrush="Black" BorderThickness="2,2,0,0" Margin="10,10,10,10">
-                    <StackPanel Orientation="Vertical">
+           
+
+            <DockPanel>
+
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Button x:Name="addAppointment" 
+                            Content="+ Add Appointment" 
+                            Width="243" 
+                            Height="40" FontWeight="Bold" FontSize="20" 
+                            />
+                    <Button x:Name="deleteAppointment" 
+                            Content="- Delete Appointment" 
+                            Width="243" 
+                            Height="40" FontWeight="Bold" FontSize="20" Margin="50,0,0,0" 
+                    />
+
+                </StackPanel>
+
+                <TabControl>
+                    <TabItem Header="Day" Height="20" Width="100">
+                        <ScrollViewer Height="645">
+
+                            <StackPanel x:Name="appointmentList" Margin="10,10,10,0">
+                                <!-- Example Appointment Item -->
+                                <Border BorderBrush="Black" BorderThickness="1" Margin="5" Padding="10" Background="LightGreen">
+                                    <StackPanel>
+                                        <TextBlock Text="Example Appointment" FontWeight="Bold" FontSize="16"/>
+                                        <TextBlock Text="Date: 07-24-2025"/>
+                                        <TextBlock Text="Time: 4:00 AM - 5:00 AM"/>
+                                        <TextBlock Text="Category: Personal"/>
+                                    </StackPanel>
+                                </Border>
+                                
+                                <Border BorderBrush="Black" BorderThickness="1" Margin="5" Padding="10" Background="LightBlue">
+                                    <StackPanel>
+                                        <TextBlock Text="Example Appointment" FontWeight="Bold" FontSize="16"/>
+                                        <TextBlock Text="Date: 07-24-2025"/>
+                                        <TextBlock Text="Time: 10:00 AM - 11:00 AM"/>
+                                        <TextBlock Text="Category: Work"/>
+                                    </StackPanel>
+                                </Border>
+                                
+                                <Border BorderBrush="Black" BorderThickness="1" Margin="5" Padding="10" Background="Orange">
+                                    <StackPanel>
+                                        <TextBlock Text="Example Appointment" FontWeight="Bold" FontSize="16"/>
+                                        <TextBlock Text="Date: 07-24-2025"/>
+                                        <TextBlock Text="Time: 1:00 PM - 3:00 PM"/>
+                                        <TextBlock Text="Category: Hobbies"/>
+                                    </StackPanel>
+                                </Border>
+                                
+                                <Border BorderBrush="Black" BorderThickness="1" Margin="5" Padding="10" Background="Yellow">
+                                    <StackPanel>
+                                        <TextBlock Text="Example Appointment" FontWeight="Bold" FontSize="16"/>
+                                        <TextBlock Text="Date: 07-24-2025"/>
+                                        <TextBlock Text="Time: 5:00 PM - 6:00 PM"/>
+                                        <TextBlock Text="Category: Health"/>
+                                    </StackPanel>
+                                </Border>
+                                <!-- Add more appointment items here -->
+                            </StackPanel>
+
+                        </ScrollViewer>
+
+                    </TabItem>
+                    <TabItem Header="Week" Height="20" Width="100" VerticalAlignment="Center">
+                        <ScrollViewer>
+
+                            <StackPanel x:Name="weekAppointmentList" Margin="10,10,10,0">
+                                <!-- Example Week Appointment Item -->
+                                <Border BorderBrush="Black" BorderThickness="1" Margin="5" Padding="10" Background="LightCoral">
+                                    <StackPanel>
+                                        <TextBlock Text="Weekly Overview" FontWeight="Bold" FontSize="16"/>
+                                        <TextBlock Text="Week of 07/20/2025 - 07/26/2025 "/>
+                                        <TextBlock Text="Total Appointments: 4"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border BorderBrush="Black" BorderThickness="1" Margin="5" Padding="10" Background="LightGray">
+                                    <StackPanel>
+                                        <TextBlock Text="Weekly Overview" FontWeight="Bold" FontSize="16"/>
+                                        <TextBlock Text="Week of 07/27/2025 - 08/2/2025 "/>
+                                        <TextBlock Text="Total Appointments: 7"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Add more weekly appointment items here -->
+                            </StackPanel>
+
+                        </ScrollViewer>
                         
-                    </StackPanel>
-                </Border>
-            </ScrollViewer>
+                    </TabItem>
+
+                </TabControl>
+
+            </DockPanel>
+
         </Grid>
-        
+
 
     </Grid>
 </Window>
