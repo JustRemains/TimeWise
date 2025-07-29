@@ -116,6 +116,7 @@
                             Content="- Delete Appointment" 
                             Width="243" 
                             Height="40" FontWeight="Bold" FontSize="20" Margin="50,0,0,0" 
+                            Click="DeleteAppointment_Click"
                     />
 
                 </StackPanel>

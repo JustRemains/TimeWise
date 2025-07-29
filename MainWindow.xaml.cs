@@ -81,6 +81,26 @@ namespace TimeWise
            
         }
 
+        private void DeleteAppointment_Click(object sender, RoutedEventArgs e)
+        {
+            DeleteAppointment deleteAppointment = new();
+            deleteAppointment.ShowDialog();
+
+
+            // Logic to delete an appointment
+            MessageBox.Show("Delete Appointment button clicked!");
+            // Implement deletion logic here
+
+            if( appointmentList.Children.Count > 0)
+            {
+                // Remove the last appointment for demonstration purposes
+                appointmentList.Children.RemoveAt(appointmentList.Children.Count - 1);
+            }
+            else
+            {
+                MessageBox.Show("No appointments to delete.");
+            }
+        }
 
     }
 }
