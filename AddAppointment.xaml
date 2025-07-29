@@ -1,0 +1,30 @@
+﻿<Window x:Class="TimeWise.AddAppointment"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TimeWise"
+        mc:Ignorable="d"
+        Title="AddAppointment" Height="400" Width="400">
+    <Grid>
+        
+        <StackPanel>
+            
+            <Label Content="Add New Appointment" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,20"/>
+            <Label Content="Title" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,20"/>
+            <TextBox Name="appointmentTitle" Margin="20,-20,20,0" Text="Title"/>
+            
+            <Label Content="Date" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,20"/>
+            <TextBox Name="date" Margin="20,-20,20,0" Text="Date (e.g., 2023-10-01)"/>
+            
+            <Label Content="Time" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,20"/>
+            <TextBox Name="time" Margin="20,-20,20,0" Text="Time (e.g., 14:00)"/>
+            
+            <Label Content ="Category"  FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,20"/>
+            <TextBox Name="category" Margin="20,-20,20,0" Text="Category (e.g., Meeting)"/>
+
+            <Button Name="saveButton" Content="Save Appointment" Margin="20,20,20,0" Height="40" Click="SaveButton_Click"/>
+        </StackPanel>
+        
+    </Grid>
+</Window>
