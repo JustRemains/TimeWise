@@ -69,33 +69,13 @@ namespace TimeWise
                 if (calendar?.SelectedDate.HasValue == true)
                 {
                     _selectedDate = calendar.SelectedDate.Value;
-                    FileLogger.Log($"Calendar date changed to: {_selectedDate:yyyy-MM-dd}");
-                    
-                    // 根据当前选中的标签页刷新相应视图
-                    var tabControl = FindName("MainTabControl") as TabControl;
-                    if (tabControl?.SelectedItem is TabItem selectedTab)
-                    {
-                        string tabHeader = selectedTab.Header?.ToString() ?? "";
-                        if (tabHeader == "Week")
-                        {
-                            await LoadWeeklyAppointmentsAsync();
-                        }
-                        else
-                        {
-                            await LoadAppointmentsAsync();
-                        }
-                    }
-                    else
-                    {
-                        // 默认刷新Day视图
-                        await LoadAppointmentsAsync();
-                    }
+                    FileLogger.Log($"Calendar date selected: {_selectedDate:yyyy-MM-dd}");
+                    await LoadAppointmentsAsync();
                 }
             }
             catch (Exception ex)
             {
                 FileLogger.LogException("Calendar_SelectedDatesChanged", ex);
-                MessageBox.Show($"Error changing date: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -616,9 +596,22 @@ namespace TimeWise
                 Margin = new Thickness(5, 15, 5, 5)
             };
 
+            // Get English day name using DayOfWeek enum
+            string dayName = date.DayOfWeek switch
+            {
+                DayOfWeek.Monday => "Monday",
+                DayOfWeek.Tuesday => "Tuesday", 
+                DayOfWeek.Wednesday => "Wednesday",
+                DayOfWeek.Thursday => "Thursday",
+                DayOfWeek.Friday => "Friday",
+                DayOfWeek.Saturday => "Saturday",
+                DayOfWeek.Sunday => "Sunday",
+                _ => date.DayOfWeek.ToString()
+            };
+
             var dateText = new TextBlock
             {
-                Text = $"{date:dddd, yyyy-MM-dd}",
+                Text = $"{dayName}, {date:yyyy-MM-dd}",
                 FontSize = 18,
                 FontWeight = FontWeights.Bold,
                 Foreground = date.Date == DateTime.Today ? Brushes.DarkBlue : Brushes.Black
