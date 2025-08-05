@@ -4,27 +4,68 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TimeWise"
+        xmlns:System="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="AddAppointment" Height="450" Width="400">
-    <Grid>
-        
-        <StackPanel>
-            
-            <Label Content="Add New Appointment" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,20"/>
-            <Label Content="Title" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,20"/>
-            <TextBox Name="appointmentTitle" Margin="20,-20,20,0" Text="Title"/>
-            
-            <Label Content="Date" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,20"/>
-            <TextBox Name="date" Margin="20,-20,20,0" Text="Date (e.g., 2023-10-01)"/>
-            
-            <Label Content="Time" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,20"/>
-            <TextBox Name="time" Margin="20,-20,20,0" Text="Time (e.g., 14:00)"/>
-            
-            <Label Content ="Category"  FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,20"/>
-            <TextBox Name="category" Margin="20,-20,20,0" Text="Category (e.g., Meeting)"/>
+        Title="Add New Appointment" Height="750" Width="480" 
+        MinHeight="700" MinWidth="450" ResizeMode="CanResize">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid>
+            <StackPanel Margin="20">
+                
+                <Label Content="Add New Appointment" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,20"/>
+                
+                <!-- Title Section -->
+                <Label Content="Title" FontSize="16" FontWeight="Bold" HorizontalAlignment="Left" />
+                <TextBox Name="appointmentTitle" Margin="0,5,0,15" Height="30" FontSize="14" Text=""/>
+                
+                <!-- Date Section -->
+                <Label Content="Date" FontSize="16" FontWeight="Bold" HorizontalAlignment="Left" />
+                <DatePicker Name="appointmentDate" Margin="0,5,0,15" Height="30" FontSize="14"/>
+                
+                <!-- Time Section -->
+                <Label Content="Start Time" FontSize="16" FontWeight="Bold" HorizontalAlignment="Left" />
+                <StackPanel Orientation="Horizontal" Margin="0,5,0,10">
+                    <ComboBox Name="startHour" Width="60" Height="30" FontSize="14" SelectedIndex="9"/>
+                    <Label Content=":" FontSize="16" Margin="5,0" VerticalAlignment="Center"/>
+                    <ComboBox Name="startMinute" Width="60" Height="30" FontSize="14" SelectedIndex="0"/>
+                </StackPanel>
+                
+                <Label Content="End Time" FontSize="16" FontWeight="Bold" HorizontalAlignment="Left" />
+                <StackPanel Orientation="Horizontal" Margin="0,5,0,15">
+                    <ComboBox Name="endHour" Width="60" Height="30" FontSize="14" SelectedIndex="10"/>
+                    <Label Content=":" FontSize="16" Margin="5,0" VerticalAlignment="Center"/>
+                    <ComboBox Name="endMinute" Width="60" Height="30" FontSize="14" SelectedIndex="0"/>
+                </StackPanel>
+                
+                <!-- Category Section -->
+                <Label Content="Category" FontSize="16" FontWeight="Bold" HorizontalAlignment="Left" />
+                <StackPanel Orientation="Horizontal" Margin="0,5,0,15">
+                    <ComboBox Name="categoryComboBox" Width="320" Height="35" FontSize="14" IsEditable="True" 
+                              SelectionChanged="CategoryComboBox_SelectionChanged"/>
+                    <Button Name="addCategoryButton" Content="+" Width="35" Height="35" Margin="5,0,0,0" 
+                            FontSize="16" FontWeight="Bold" Click="AddCategory_Click" 
+                            Background="LightGreen" BorderBrush="Green"/>
+                    <Button Name="deleteCategoryButton" Content="×" Width="35" Height="35" Margin="5,0,0,0" 
+                            FontSize="16" FontWeight="Bold" Click="DeleteCategory_Click"
+                            Background="LightCoral" BorderBrush="Red"/>
+                </StackPanel>
+                
+                <!-- Selected Category Display -->
+                <Border Name="selectedCategoryBorder" Height="40" Margin="0,0,0,15" 
+                        Background="LightBlue" CornerRadius="5" Visibility="Collapsed">
+                    <TextBlock Name="selectedCategoryText" Text="" FontSize="14" FontWeight="Bold" 
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                
+                <!-- Description Section -->
+                <Label Content="Description (Optional)" FontSize="16" FontWeight="Bold" HorizontalAlignment="Left" />
+                <TextBox Name="appointmentDescription" Margin="0,5,0,20" Height="80" FontSize="14" 
+                         TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
 
-            <Button Name="saveButton" Content="Save Appointment" Margin="20,20,20,0" Height="40" Click="SaveButton_Click"/>
-        </StackPanel>
-        
-    </Grid>
+                <Button Name="saveButton" Content="Save Appointment" Margin="0,15,0,20" Height="45" 
+                        FontSize="16" FontWeight="Bold" Click="SaveButton_Click"
+                        Background="LightBlue" BorderBrush="Blue"/>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
 </Window>
