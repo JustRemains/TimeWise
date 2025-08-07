@@ -26,7 +26,10 @@ namespace TimeWise.Models
 
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
-        // ????
+        // 一对多关系：作为主要Category的Appointments（向后兼容）
         public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
+
+        // 多对多关系：一个Category可以属于多个Appointments
+        public virtual ICollection<AppointmentCategory> AppointmentCategories { get; set; } = new List<AppointmentCategory>();
     }
 }

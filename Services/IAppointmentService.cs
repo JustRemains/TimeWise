@@ -26,5 +26,10 @@ namespace TimeWise.Services
         Task<int> GetAppointmentCountAsync();
         Task<int> GetAppointmentCountByDateAsync(DateTime date);
         Task<Dictionary<string, int>> GetAppointmentCountByCategoryAsync();
+
+        // 多Category支持
+        Task<Appointment> CreateAppointmentWithCategoriesAsync(Appointment appointment, List<int> categoryIds);
+        Task<Appointment> UpdateAppointmentCategoriesAsync(int appointmentId, List<int> categoryIds);
+        Task<IEnumerable<Category>> GetAppointmentCategoriesAsync(int appointmentId);
     }
 }

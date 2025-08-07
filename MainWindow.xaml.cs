@@ -23,10 +23,12 @@ namespace TimeWise
     {
         private readonly IAppointmentService _appointmentService;
         private readonly ICategoryService _categoryService;
+        private readonly INoteService _noteService;
         private DateTime _selectedDate;
         private bool _isDarkMode = false;
+        private int _selectedCategoryFilter = 0; // 0表示显示所有categories
 
-        public MainWindow(IAppointmentService appointmentService, ICategoryService categoryService)
+        public MainWindow(IAppointmentService appointmentService, ICategoryService categoryService, INoteService noteService)
         {
             FileLogger.Log("MainWindow constructor called");
             try
@@ -39,9 +41,11 @@ namespace TimeWise
                 
                 _appointmentService = appointmentService;
                 _categoryService = categoryService;
+                _noteService = noteService;
                 _selectedDate = DateTime.Today;
                 
                 Loaded += MainWindow_Loaded;
+                Closing += MainWindow_Closing; // 添加窗口关闭事件处理
                 
                 // 连接日历选择事件
                 var calendar = FindName("MainCalendar") as TimeWise.Controls.SimpleCalendar;
@@ -277,6 +281,9 @@ namespace TimeWise
         {
             try
             {
+                // 在切换日期之前，先保存当前日期的Notes内容
+                await SaveNotesFromLeftPanel();
+                
                 _selectedDate = selectedDate;
                 FileLogger.Log($"Calendar date selected: {_selectedDate:yyyy-MM-dd}");
                 await LoadAppointmentsAsync();
@@ -294,6 +301,9 @@ namespace TimeWise
                 var calendar = sender as Calendar;
                 if (calendar?.SelectedDate.HasValue == true)
                 {
+                    // 在切换日期之前，先保存当前日期的Notes内容
+                    await SaveNotesFromLeftPanel();
+                    
                     _selectedDate = calendar.SelectedDate.Value;
                     FileLogger.Log($"Calendar date selected: {_selectedDate:yyyy-MM-dd}");
                     await LoadAppointmentsAsync();
@@ -313,6 +323,9 @@ namespace TimeWise
                 // Force apply theme styles after window is fully loaded
                 ForceApplyControlStyles(_isDarkMode);
                 
+                // Load category filters
+                await LoadCategoryFilters();
+                
                 await LoadAppointmentsAsync();
                 FileLogger.Log("MainWindow loaded successfully");
             }
@@ -320,6 +333,22 @@ namespace TimeWise
             {
                 FileLogger.LogException("MainWindow_Loaded", ex);
                 MessageBox.Show($"Error loading main window: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            try
+            {
+                FileLogger.Log("MainWindow closing, saving current notes...");
+                // 在窗口关闭之前保存当前Notes内容
+                await SaveNotesFromLeftPanel();
+                FileLogger.Log("Notes saved successfully during window closing");
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("MainWindow_Closing", ex);
+                // 即使保存失败也继续关闭窗口，但记录错误
             }
         }
 
@@ -337,6 +366,11 @@ namespace TimeWise
                 if (addAppointmentWindow.ShowDialog() == true)
                 {
                     FileLogger.Log("Creating appointment from dialog data");
+                    
+                    // 获取选中的所有categories
+                    var selectedCategories = addAppointmentWindow.SelectedCategories;
+                    var primaryCategoryId = addAppointmentWindow.SelectedCategoryId;
+                    
                     // Create appointment from dialog data  
                     var appointment = new Appointment
                     {
@@ -345,31 +379,41 @@ namespace TimeWise
                         Date = addAppointmentWindow.SelectedDate ?? _selectedDate,
                         StartTime = TimeSpan.Parse(addAppointmentWindow.SelectedStartTime),
                         EndTime = TimeSpan.Parse(addAppointmentWindow.SelectedEndTime),
-                        CategoryId = addAppointmentWindow.SelectedCategoryId
+                        CategoryId = primaryCategoryId
                     };
 
-                    // Save to database
-                    FileLogger.Log($"Saving appointment to database: {appointment.Title} on {appointment.Date:yyyy-MM-dd}");
-                    await _appointmentService.CreateAppointmentAsync(appointment);
+                    // 使用新的多category创建方法
+                    FileLogger.Log($"Saving appointment with {selectedCategories.Count} categories: {appointment.Title} on {appointment.Date:yyyy-MM-dd}");
+                    await _appointmentService.CreateAppointmentWithCategoriesAsync(appointment, selectedCategories.Select(c => c.Id).ToList());
 
                     // 根据当前选中的标签页刷新相应视图
                     FileLogger.Log("Refreshing UI based on current tab");
                     var tabControl = FindName("MainTabControl") as TabControl;
                     if (tabControl?.SelectedItem is TabItem selectedTab)
                     {
-                        string tabHeader = selectedTab.Header?.ToString() ?? "";
+                        // 正确获取TabItem Header中的TextBlock的Text属性
+                        string tabHeader = "";
+                        if (selectedTab.Header is TextBlock textBlock)
+                        {
+                            tabHeader = textBlock.Text ?? "";
+                        }
+                        
+                        FileLogger.Log($"Current tab header: {tabHeader}");
                         if (tabHeader == "Week")
                         {
+                            FileLogger.Log("Refreshing Week view");
                             await LoadWeeklyAppointmentsAsync();
                         }
                         else
                         {
+                            FileLogger.Log("Refreshing Day view");
                             await LoadAppointmentsAsync();
                         }
                     }
                     else
                     {
                         // 默认刷新Day视图
+                        FileLogger.Log("No tab selected, refreshing Day view by default");
                         await LoadAppointmentsAsync();
                     }
 
@@ -394,14 +438,24 @@ namespace TimeWise
                 // Load appointments for selected date
                 FileLogger.Log("Loading appointments from database");
                 var appointments = await _appointmentService.GetAppointmentsByDateAsync(_selectedDate);
-                FileLogger.Log($"Loaded {appointments.Count()} appointments for {_selectedDate:yyyy-MM-dd}");
+                
+                // Apply category filter
+                if (_selectedCategoryFilter > 0)
+                {
+                    appointments = appointments.Where(a => a.CategoryId == _selectedCategoryFilter);
+                }
+                
+                var filteredAppointments = appointments.ToList();
+                FileLogger.Log($"Loaded {filteredAppointments.Count} appointments for {_selectedDate:yyyy-MM-dd} (filtered by category: {_selectedCategoryFilter})");
 
-                if (!appointments.Any())
+                if (!filteredAppointments.Any())
                 {
                     // 显示一个占位符消息
                     var noAppointmentsText = new TextBlock
                     {
-                        Text = $"No appointments for {_selectedDate:yyyy-MM-dd}",
+                        Text = _selectedCategoryFilter > 0 ? 
+                            $"No appointments for {_selectedDate:yyyy-MM-dd} in selected category" :
+                            $"No appointments for {_selectedDate:yyyy-MM-dd}",
                         FontSize = 16,
                         FontStyle = FontStyles.Italic,
                         HorizontalAlignment = HorizontalAlignment.Center,
@@ -413,7 +467,7 @@ namespace TimeWise
                 else
                 {
                     // Create UI cards for each appointment
-                    foreach (var appointment in appointments)
+                    foreach (var appointment in filteredAppointments)
                     {
                         FileLogger.Log($"Creating card for appointment: {appointment.Title}");
                         CreateAppointmentCard(appointment);
@@ -422,6 +476,9 @@ namespace TimeWise
                 
                 // 更新标题显示当前日期
                 UpdateDateDisplay();
+                
+                // 加载当前日期的笔记到左侧Notes组件
+                await LoadNotesToLeftPanel();
                 
                 FileLogger.Log("LoadAppointmentsAsync completed successfully");
             }
@@ -450,7 +507,7 @@ namespace TimeWise
             }
         }
 
-        private void CreateAppointmentCard(Appointment appointment)
+        private void CreateAppointmentCard(Appointment appointment) // Day视图卡片
         {
             try
             {
@@ -469,55 +526,140 @@ namespace TimeWise
                 // Get appropriate text color based on background brightness
                 Brush textColor = GetContrastingTextColor(categoryColor);
 
-                // Create the appointment content with appropriate text colors
+                // Create the appointment content with improved layout and text sizes
                 TextBlock titleTextBlock = new TextBlock
                 {
                     Text = appointment.Title,
-                    FontSize = 16,
+                    FontSize = 18, // 增大标题字体
                     FontWeight = FontWeights.Bold,
-                    Foreground = textColor
+                    Foreground = textColor,
+                    Margin = new Thickness(0, 0, 0, 8) // 添加底部间距
+                };
+
+                // 创建信息行的容器
+                StackPanel infoPanel = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Margin = new Thickness(0, 0, 0, 5)
                 };
 
                 TextBlock dateTextBlock = new TextBlock
                 {
-                    Text = $"Date: {appointment.Date:yyyy-MM-dd}",
+                    Text = $"📅 {appointment.Date:MM/dd}",
                     FontSize = 12,
-                    Foreground = textColor
+                    Foreground = textColor,
+                    Margin = new Thickness(0, 0, 15, 0)
                 };
 
                 TextBlock timeTextBlock = new TextBlock
                 {
-                    Text = $"Time: {appointment.TimeRange}",
+                    Text = $"🕐 {appointment.StartTime:hh\\:mm}-{appointment.EndTime:hh\\:mm}",
                     FontSize = 12,
                     Foreground = textColor
                 };
 
-                TextBlock categoryTextBlock = new TextBlock
+                infoPanel.Children.Add(dateTextBlock);
+                infoPanel.Children.Add(timeTextBlock);
+
+                // Categories容器 - 显示真正的多个categories
+                WrapPanel categoriesPanel = new WrapPanel
                 {
-                    Text = $"Category: {appointment.Category.Name}",
-                    FontSize = 12,
-                    FontWeight = FontWeights.Bold,
-                    Foreground = textColor
+                    Margin = new Thickness(0, 0, 0, 5)
                 };
 
-                // 如果有描述，也显示出来
-                StackPanel contentPanel = new StackPanel();
-                contentPanel.Children.Add(titleTextBlock);
-                contentPanel.Children.Add(dateTextBlock);
-                contentPanel.Children.Add(timeTextBlock);
-                contentPanel.Children.Add(categoryTextBlock);
+                // 获取所有关联的categories
+                var allCategories = new List<Category> { appointment.Category }; // 主要category
                 
+                // 添加通过多对多关系关联的其他categories
+                if (appointment.AppointmentCategories.Any())
+                {
+                    var additionalCategories = appointment.AppointmentCategories
+                        .Select(ac => ac.Category)
+                        .Where(c => c.Id != appointment.CategoryId) // 排除主要category
+                        .ToList();
+                    allCategories.AddRange(additionalCategories);
+                }
+
+                // 限制显示数量并去重
+                var displayCategories = allCategories
+                    .GroupBy(c => c.Id)
+                    .Select(g => g.First())
+                    .Take(4)
+                    .ToList();
+
+                foreach (var (category, index) in displayCategories.Select((cat, i) => (cat, i)))
+                {
+                    Border categoryTag = new Border
+                    {
+                        Background = index == 0 ? 
+                            new SolidColorBrush(Color.FromArgb(80, 255, 255, 255)) : // 主category半透明白色
+                            new SolidColorBrush(Color.FromArgb(60, 100, 150, 255)), // 额外category蓝色调
+                        CornerRadius = new CornerRadius(8),
+                        Padding = new Thickness(6, 2, 6, 2),
+                        Margin = new Thickness(0, 0, 5, 0)
+                    };
+
+                    TextBlock categoryText = new TextBlock
+                    {
+                        Text = index == 0 ? $"🏷️ {category.Name}" : $"+ {category.Name}",
+                        FontSize = index == 0 ? 10 : 8,
+                        FontWeight = index == 0 ? FontWeights.Medium : FontWeights.Normal,
+                        Foreground = textColor
+                    };
+
+                    categoryTag.Child = categoryText;
+                    categoriesPanel.Children.Add(categoryTag);
+                }
+
+                // 如果还有更多categories，显示"..."
+                var totalCategoryCount = allCategories.GroupBy(c => c.Id).Count();
+                if (totalCategoryCount > 4)
+                {
+                    Border moreTag = new Border
+                    {
+                        Background = new SolidColorBrush(Color.FromArgb(40, 128, 128, 128)),
+                        CornerRadius = new CornerRadius(8),
+                        Padding = new Thickness(6, 2, 6, 2),
+                        Margin = new Thickness(0, 0, 5, 0)
+                    };
+
+                    TextBlock moreText = new TextBlock
+                    {
+                        Text = $"...+{totalCategoryCount - 4}",
+                        FontSize = 8,
+                        FontWeight = FontWeights.Normal,
+                        Foreground = textColor
+                    };
+
+                    moreTag.Child = moreText;
+                    categoriesPanel.Children.Add(moreTag);
+                }
+
+                // 描述文本（如果有）
+                TextBlock? descriptionTextBlock = null;
                 if (!string.IsNullOrWhiteSpace(appointment.Description))
                 {
-                    TextBlock descriptionTextBlock = new TextBlock
+                    descriptionTextBlock = new TextBlock
                     {
-                        Text = $"Description: {appointment.Description}",
+                        Text = appointment.Description,
                         FontSize = 11,
                         FontStyle = FontStyles.Italic,
                         Margin = new Thickness(0, 5, 0, 0),
                         TextWrapping = TextWrapping.Wrap,
-                        Foreground = textColor
+                        Foreground = textColor,
+                        MaxHeight = 40, // 限制描述高度
+                        TextTrimming = TextTrimming.CharacterEllipsis
                     };
+                }
+
+                // 组装内容面板
+                StackPanel contentPanel = new StackPanel();
+                contentPanel.Children.Add(titleTextBlock);
+                contentPanel.Children.Add(infoPanel);
+                contentPanel.Children.Add(categoriesPanel);
+                
+                if (descriptionTextBlock != null)
+                {
                     contentPanel.Children.Add(descriptionTextBlock);
                 }
 
@@ -529,8 +671,12 @@ namespace TimeWise
                     Background = categoryColor,
                     CornerRadius = new CornerRadius(10),
                     Margin = new Thickness(5),
-                    Child = contentPanel
+                    Child = contentPanel,
+                    Cursor = Cursors.Hand // 添加手型光标提示可点击
                 };
+
+                // 添加点击事件以编辑appointment
+                appointmentBorder.MouseLeftButtonDown += (sender, e) => EditAppointment(appointment);
 
                 // Apply theme-aware shadow
                 var shadowColor = _isDarkMode ? Colors.Black : Colors.Gray;
@@ -758,6 +904,9 @@ namespace TimeWise
             {
                 if (sender is TabControl tabControl && tabControl.SelectedItem is TabItem selectedTab)
                 {
+                    // 在切换标签页之前，先保存当前日期的Notes内容
+                    await SaveNotesFromLeftPanel();
+                    
                     string tabHeader = "";
                     
                     // Handle TextBlock header
@@ -806,16 +955,25 @@ namespace TimeWise
 
                 // 获取本周的所有预约
                 var weeklyAppointments = await _appointmentService.GetAppointmentsByDateRangeAsync(startOfWeek, endOfWeek);
+                
+                // Apply category filter
+                if (_selectedCategoryFilter > 0)
+                {
+                    weeklyAppointments = weeklyAppointments.Where(a => a.CategoryId == _selectedCategoryFilter);
+                }
+                
                 var appointmentsList = weeklyAppointments.ToList();
                 
-                FileLogger.Log($"Loaded {appointmentsList.Count} appointments for the week");
+                FileLogger.Log($"Loaded {appointmentsList.Count} appointments for the week (filtered by category: {_selectedCategoryFilter})");
 
                 if (!appointmentsList.Any())
                 {
                     // 显示无预约的提示
                     var noAppointmentsText = new TextBlock
                     {
-                        Text = $"No appointments for week of {startOfWeek:yyyy-MM-dd}",
+                        Text = _selectedCategoryFilter > 0 ? 
+                            $"No appointments for week of {startOfWeek:yyyy-MM-dd} in selected category" :
+                            $"No appointments for week of {startOfWeek:yyyy-MM-dd}",
                         FontSize = 16,
                         FontStyle = FontStyles.Italic,
                         HorizontalAlignment = HorizontalAlignment.Center,
@@ -939,7 +1097,7 @@ namespace TimeWise
             weekAppointmentList.Children.Add(headerPanel);
         }
 
-        private void CreateWeeklyAppointmentCard(Appointment appointment)
+        private void CreateWeeklyAppointmentCard(Appointment appointment) // Week视图卡片
         {
             try
             {
@@ -958,55 +1116,134 @@ namespace TimeWise
                 // Get appropriate text color based on background brightness
                 Brush textColor = GetContrastingTextColor(categoryColor);
 
-                // 创建与Day视图相同的内容结构，使用适当的文本颜色
+                // 创建与Day视图相同的改进布局
                 TextBlock titleTextBlock = new TextBlock
                 {
                     Text = appointment.Title,
-                    FontSize = 16,
+                    FontSize = 18, // 增大标题字体
                     FontWeight = FontWeights.Bold,
-                    Foreground = textColor
+                    Foreground = textColor,
+                    Margin = new Thickness(0, 0, 0, 8) // 添加底部间距
+                };
+
+                // 创建信息行的容器
+                StackPanel infoPanel = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Margin = new Thickness(0, 0, 0, 5)
                 };
 
                 TextBlock dateTextBlock = new TextBlock
                 {
-                    Text = $"Date: {appointment.Date:yyyy-MM-dd}",
+                    Text = $"📅 {appointment.Date:MM/dd}",
                     FontSize = 12,
-                    Foreground = textColor
+                    Foreground = textColor,
+                    Margin = new Thickness(0, 0, 15, 0)
                 };
 
                 TextBlock timeTextBlock = new TextBlock
                 {
-                    Text = $"Time: {appointment.TimeRange}",
+                    Text = $"🕐 {appointment.StartTime:hh\\:mm}-{appointment.EndTime:hh\\:mm}",
                     FontSize = 12,
                     Foreground = textColor
                 };
 
-                TextBlock categoryTextBlock = new TextBlock
+                infoPanel.Children.Add(dateTextBlock);
+                infoPanel.Children.Add(timeTextBlock);
+
+                // Categories容器 - 与Day视图保持一致的真实多category显示
+                WrapPanel categoriesPanel = new WrapPanel
                 {
-                    Text = $"Category: {appointment.Category.Name}",
-                    FontSize = 12,
-                    FontWeight = FontWeights.Bold,
-                    Foreground = textColor
+                    Margin = new Thickness(0, 0, 0, 5)
                 };
+
+                // 获取所有关联的categories
+                var allCategories = new List<Category> { appointment.Category }; // 主要category
+                
+                // 添加通过多对多关系关联的其他categories
+                if (appointment.AppointmentCategories.Any())
+                {
+                    var additionalCategories = appointment.AppointmentCategories
+                        .Select(ac => ac.Category)
+                        .Where(c => c.Id != appointment.CategoryId) // 排除主要category
+                        .ToList();
+                    allCategories.AddRange(additionalCategories);
+                }
+
+                // 限制显示数量并去重
+                var displayCategories = allCategories
+                    .GroupBy(c => c.Id)
+                    .Select(g => g.First())
+                    .Take(4)
+                    .ToList();
+
+                foreach (var (category, index) in displayCategories.Select((cat, i) => (cat, i)))
+                {
+                    Border categoryTag = new Border
+                    {
+                        Background = index == 0 ? 
+                            new SolidColorBrush(Color.FromArgb(80, 255, 255, 255)) : // 主category半透明白色
+                            new SolidColorBrush(Color.FromArgb(60, 100, 150, 255)), // 额外category蓝色调
+                        CornerRadius = new CornerRadius(8),
+                        Padding = new Thickness(6, 2, 6, 2),
+                        Margin = new Thickness(0, 0, 5, 0)
+                    };
+
+                    TextBlock categoryText = new TextBlock
+                    {
+                        Text = index == 0 ? $"🏷️ {category.Name}" : $"+ {category.Name}",
+                        FontSize = index == 0 ? 10 : 8,
+                        FontWeight = index == 0 ? FontWeights.Medium : FontWeights.Normal,
+                        Foreground = textColor
+                    };
+
+                    categoryTag.Child = categoryText;
+                    categoriesPanel.Children.Add(categoryTag);
+                }
+
+                // 如果还有更多categories，显示"..."
+                var totalCategoryCount = allCategories.GroupBy(c => c.Id).Count();
+                if (totalCategoryCount > 4)
+                {
+                    Border moreTag = new Border
+                    {
+                        Background = new SolidColorBrush(Color.FromArgb(40, 128, 128, 128)),
+                        CornerRadius = new CornerRadius(8),
+                        Padding = new Thickness(6, 2, 6, 2),
+                        Margin = new Thickness(0, 0, 5, 0)
+                    };
+
+                    TextBlock moreText = new TextBlock
+                    {
+                        Text = $"...+{totalCategoryCount - 4}",
+                        FontSize = 8,
+                        FontWeight = FontWeights.Normal,
+                        Foreground = textColor
+                    };
+
+                    moreTag.Child = moreText;
+                    categoriesPanel.Children.Add(moreTag);
+                }
 
                 // 创建内容面板
                 StackPanel contentPanel = new StackPanel();
                 contentPanel.Children.Add(titleTextBlock);
-                contentPanel.Children.Add(dateTextBlock);
-                contentPanel.Children.Add(timeTextBlock);
-                contentPanel.Children.Add(categoryTextBlock);
+                contentPanel.Children.Add(infoPanel);
+                contentPanel.Children.Add(categoriesPanel);
                 
                 // 如果有描述，也显示出来
                 if (!string.IsNullOrWhiteSpace(appointment.Description))
                 {
                     TextBlock descriptionTextBlock = new TextBlock
                     {
-                        Text = $"Description: {appointment.Description}",
+                        Text = appointment.Description,
                         FontSize = 11,
                         FontStyle = FontStyles.Italic,
                         Margin = new Thickness(0, 5, 0, 0),
                         TextWrapping = TextWrapping.Wrap,
-                        Foreground = textColor
+                        Foreground = textColor,
+                        MaxHeight = 40, // 限制描述高度
+                        TextTrimming = TextTrimming.CharacterEllipsis
                     };
                     contentPanel.Children.Add(descriptionTextBlock);
                 }
@@ -1019,8 +1256,12 @@ namespace TimeWise
                     Background = categoryColor,
                     CornerRadius = new CornerRadius(10),
                     Margin = new Thickness(5),
-                    Child = contentPanel
+                    Child = contentPanel,
+                    Cursor = Cursors.Hand // 添加手型光标提示可点击
                 };
+
+                // 添加点击事件以编辑appointment
+                appointmentBorder.MouseLeftButtonDown += (sender, e) => EditAppointment(appointment);
 
                 // Apply theme-aware shadow
                 var shadowColor = _isDarkMode ? Colors.Black : Colors.Gray;
@@ -1186,5 +1427,352 @@ namespace TimeWise
                 return Brushes.Black;
             }
         }
+
+        private void EditAppointment(Appointment appointment)
+        {
+            try
+            {
+                FileLogger.Log($"EditAppointment called for appointment: {appointment.Title}");
+                var editWindow = new AddAppointment(_categoryService);
+                
+                // 设置窗口标题为编辑模式
+                editWindow.Title = "Edit Appointment";
+                
+                // 预填充现有数据
+                editWindow.SetDefaultDate(appointment.Date);
+                editWindow.PreFillAppointmentData(appointment);
+                
+                // 显示编辑窗口
+                if (editWindow.ShowDialog() == true)
+                {
+                    // 获取选中的所有categories
+                    var selectedCategories = editWindow.SelectedCategories;
+                    var primaryCategoryId = editWindow.SelectedCategoryId;
+                    
+                    // 更新appointment数据
+                    appointment.Title = editWindow.SelectedTitle;
+                    appointment.Description = editWindow.SelectedDescription;
+                    appointment.Date = editWindow.SelectedDate ?? appointment.Date;
+                    appointment.StartTime = TimeSpan.Parse(editWindow.SelectedStartTime);
+                    appointment.EndTime = TimeSpan.Parse(editWindow.SelectedEndTime);
+                    appointment.CategoryId = primaryCategoryId;
+                    
+                    // 保存到数据库
+                    Task.Run(async () =>
+                    {
+                        try
+                        {
+                            // 更新appointment基本信息
+                            await _appointmentService.UpdateAppointmentAsync(appointment);
+                            
+                            // 更新多category关系
+                            await _appointmentService.UpdateAppointmentCategoriesAsync(appointment.Id, selectedCategories.Select(c => c.Id).ToList());
+                            
+                            // 在UI线程中刷新显示
+                            await Dispatcher.InvokeAsync(async () =>
+                            {
+                                var tabControl = FindName("MainTabControl") as TabControl;
+                                if (tabControl?.SelectedItem is TabItem selectedTab)
+                                {
+                                    if (selectedTab.Header is TextBlock textBlock && textBlock.Text == "Week")
+                                    {
+                                        await LoadWeeklyAppointmentsAsync();
+                                    }
+                                    else
+                                    {
+                                        await LoadAppointmentsAsync();
+                                    }
+                                }
+                                else
+                                {
+                                    await LoadAppointmentsAsync();
+                                }
+                                
+                                MessageBox.Show("Appointment updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            Dispatcher.Invoke(() =>
+                            {
+                                FileLogger.LogException("EditAppointment - Update", ex);
+                                MessageBox.Show($"Error updating appointment: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            });
+                        }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("EditAppointment", ex);
+                MessageBox.Show($"Error opening edit dialog: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async Task LoadCategoryFilters()
+        {
+            try
+            {
+                var categories = await _categoryService.GetAllCategoriesAsync();
+                
+                // Load Day tab filter
+                var dayFilterComboBox = FindName("categoryFilterComboBox") as ComboBox;
+                if (dayFilterComboBox != null)
+                {
+                    dayFilterComboBox.Items.Clear();
+                    dayFilterComboBox.Items.Add(new ComboBoxItem { Content = "All Categories", Tag = 0 });
+                    
+                    foreach (var category in categories)
+                    {
+                        var item = new ComboBoxItem
+                        {
+                            Content = category.Name,
+                            Tag = category.Id,
+                            Background = GetBrushFromHex(category.ColorHex)
+                        };
+                        dayFilterComboBox.Items.Add(item);
+                    }
+                    dayFilterComboBox.SelectedIndex = 0;
+                }
+                
+                // Load Week tab filter
+                var weekFilterComboBox = FindName("categoryFilterComboBoxWeek") as ComboBox;
+                if (weekFilterComboBox != null)
+                {
+                    weekFilterComboBox.Items.Clear();
+                    weekFilterComboBox.Items.Add(new ComboBoxItem { Content = "All Categories", Tag = 0 });
+                    
+                    foreach (var category in categories)
+                    {
+                        var item = new ComboBoxItem
+                        {
+                            Content = category.Name,
+                            Tag = category.Id,
+                            Background = GetBrushFromHex(category.ColorHex)
+                        };
+                        weekFilterComboBox.Items.Add(item);
+                    }
+                    weekFilterComboBox.SelectedIndex = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("LoadCategoryFilters", ex);
+            }
+        }
+
+        private async void CategoryFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                if (sender is ComboBox comboBox && comboBox.SelectedItem is ComboBoxItem selectedItem)
+                {
+                    _selectedCategoryFilter = (int)(selectedItem.Tag ?? 0);
+                    await LoadAppointmentsAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("CategoryFilter_SelectionChanged", ex);
+            }
+        }
+
+        private async void CategoryFilterWeek_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                if (sender is ComboBox comboBox && comboBox.SelectedItem is ComboBoxItem selectedItem)
+                {
+                    _selectedCategoryFilter = (int)(selectedItem.Tag ?? 0);
+                    await LoadWeeklyAppointmentsAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("CategoryFilterWeek_SelectionChanged", ex);
+            }
+        }
+
+        #region Notes Functionality
+
+        private bool _isLoadingNotes = false;  // 防止在加载时触发TextChanged事件
+        private string _lastLoadedNotesContent = "";  // 记录最后加载的内容，用于检测真实变化
+
+        /// <summary>
+        /// 加载当前日期的笔记到左侧Notes面板
+        /// </summary>
+        private async Task LoadNotesToLeftPanel()
+        {
+            try
+            {
+                _isLoadingNotes = true; // 设置标志，防止触发TextChanged
+                
+                var notes = await _noteService.GetNotesByDateAsync(_selectedDate);
+                
+                // 合并所有笔记到一个字符串，简单用换行分隔
+                var combinedNotes = string.Join("\n", notes.Select(n => n.Content));
+                
+                // 记录当前加载的内容
+                _lastLoadedNotesContent = combinedNotes;
+                
+                // 显示在左侧NotesBox中
+                if (NotesBox != null)
+                {
+                    NotesBox.Text = combinedNotes;
+                    
+                    // 添加事件处理程序（如果还没添加的话）
+                    NotesBox.LostFocus -= NotesBox_LostFocus;
+                    NotesBox.LostFocus += NotesBox_LostFocus;
+                    
+                    NotesBox.TextChanged -= NotesBox_TextChanged;
+                    NotesBox.TextChanged += NotesBox_TextChanged;
+                }
+                
+                FileLogger.Log($"Loaded notes content for {_selectedDate:yyyy-MM-dd}");
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("LoadNotesToLeftPanel", ex);
+                MessageBox.Show($"Error loading notes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                _isLoadingNotes = false; // 重置标志
+            }
+        }
+
+        /// <summary>
+        /// Notes文本框失去焦点时自动保存
+        /// </summary>
+        private async void NotesBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            await SaveNotesFromLeftPanel();
+        }
+
+        /// <summary>
+        /// Notes文本框内容改变时延迟保存
+        /// </summary>
+        private void NotesBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // 如果正在加载笔记，忽略文本变化事件
+            if (_isLoadingNotes)
+                return;
+                
+            // 创建一个延迟保存机制
+            _noteSaveTimer?.Stop();
+            _noteSaveTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(2) // 2秒后自动保存
+            };
+            _noteSaveTimer.Tick += async (s, args) =>
+            {
+                _noteSaveTimer.Stop();
+                await SaveNotesFromLeftPanel();
+            };
+            _noteSaveTimer.Start();
+        }
+
+        private System.Windows.Threading.DispatcherTimer? _noteSaveTimer;
+
+        /// <summary>
+        /// 从左侧Notes面板保存笔记
+        /// </summary>
+        private async Task SaveNotesFromLeftPanel()
+        {
+            try
+            {
+                if (NotesBox == null || _isLoadingNotes)
+                    return;
+
+                var currentContent = NotesBox.Text?.Trim() ?? "";
+                
+                // 如果内容与最后加载的内容相同，则无需保存
+                if (currentContent == _lastLoadedNotesContent)
+                {
+                    return;
+                }
+
+                // 获取当前日期已有的笔记并删除所有
+                var existingNotes = await _noteService.GetNotesByDateAsync(_selectedDate);
+                foreach (var note in existingNotes)
+                {
+                    await _noteService.DeleteNoteAsync(note.Id);
+                }
+                
+                // 如果有新内容，保存为单个笔记
+                if (!string.IsNullOrWhiteSpace(currentContent))
+                {
+                    var note = new Note
+                    {
+                        Content = currentContent,
+                        Date = _selectedDate
+                    };
+
+                    await _noteService.AddNoteAsync(note);
+                    FileLogger.Log($"Saved notes for {_selectedDate:yyyy-MM-dd}");
+                }
+                else
+                {
+                    FileLogger.Log($"Cleared notes for {_selectedDate:yyyy-MM-dd}");
+                }
+
+                // 更新最后加载的内容
+                _lastLoadedNotesContent = currentContent;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("SaveNotesFromLeftPanel", ex);
+            }
+        }
+
+        /// <summary>
+        /// 刷新Notes显示（仅在用户不活跃时）
+        /// </summary>
+        private async Task RefreshNotesDisplay()
+        {
+            try
+            {
+                // 只有在NotesBox没有焦点时才刷新
+                if (NotesBox != null && !NotesBox.IsFocused)
+                {
+                    await LoadNotesToLeftPanel();
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("RefreshNotesDisplay", ex);
+            }
+        }
+
+        #endregion
+
+        #region Category Display Helper
+
+        /// <summary>
+        /// 创建统一样式的category标签
+        /// </summary>
+        private Border CreateCategoryTag(Category category, Brush textColor)
+        {
+            Border categoryTag = new Border
+            {
+                Background = new SolidColorBrush(Color.FromArgb(80, 255, 255, 255)), // 统一使用半透明白色
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(6, 2, 6, 2),
+                Margin = new Thickness(0, 0, 5, 0)
+            };
+
+            TextBlock categoryText = new TextBlock
+            {
+                Text = $"🏷️ {category.Name}", // 统一使用标签图标
+                FontSize = 10, // 统一字体大小
+                FontWeight = FontWeights.Medium, // 统一字体粗细
+                Foreground = textColor
+            };
+
+            categoryTag.Child = categoryText;
+            return categoryTag;
+        }
+
+        #endregion
     }
 }

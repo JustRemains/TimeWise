@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build and Run TimeWise",
+			"type": "shell",
+			"command": "dotnet build && dotnet run",
+			"group": "build",
+			"isBackground": false,
+			"args": []
+		}
+	]
+}

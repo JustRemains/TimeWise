@@ -22,6 +22,8 @@ namespace TimeWise.Services
         {
             var appointments = await _context.Appointments
                 .Include(a => a.Category)
+                .Include(a => a.AppointmentCategories)
+                    .ThenInclude(ac => ac.Category)
                 .OrderBy(a => a.Date)
                 .ToListAsync();
             
@@ -33,6 +35,8 @@ namespace TimeWise.Services
         {
             return await _context.Appointments
                 .Include(a => a.Category)
+                .Include(a => a.AppointmentCategories)
+                    .ThenInclude(ac => ac.Category)
                 .FirstOrDefaultAsync(a => a.Id == id);
         }
 
@@ -41,6 +45,8 @@ namespace TimeWise.Services
             var targetDate = date.Date;
             var appointments = await _context.Appointments
                 .Include(a => a.Category)
+                .Include(a => a.AppointmentCategories)
+                    .ThenInclude(ac => ac.Category)
                 .Where(a => a.Date.Date == targetDate)
                 .ToListAsync();
             
@@ -55,6 +61,8 @@ namespace TimeWise.Services
             
             var appointments = await _context.Appointments
                 .Include(a => a.Category)
+                .Include(a => a.AppointmentCategories)
+                    .ThenInclude(ac => ac.Category)
                 .Where(a => a.Date.Date >= start && a.Date.Date <= end)
                 .OrderBy(a => a.Date)
                 .ToListAsync();
@@ -187,6 +195,73 @@ namespace TimeWise.Services
                 .GroupBy(a => a.Category.Name)
                 .Select(g => new { Category = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.Category, x => x.Count);
+        }
+
+        #endregion
+
+        #region 多Category支持
+
+        public async Task<Appointment> CreateAppointmentWithCategoriesAsync(Appointment appointment, List<int> categoryIds)
+        {
+            // 首先创建appointment
+            _context.Appointments.Add(appointment);
+            await _context.SaveChangesAsync();
+
+            // 然后添加多category关系
+            if (categoryIds != null && categoryIds.Any())
+            {
+                foreach (var categoryId in categoryIds.Distinct())
+                {
+                    var appointmentCategory = new AppointmentCategory
+                    {
+                        AppointmentId = appointment.Id,
+                        CategoryId = categoryId
+                    };
+                    _context.AppointmentCategories.Add(appointmentCategory);
+                }
+                await _context.SaveChangesAsync();
+            }
+
+            // 重新加载包含所有关系的appointment
+            return await GetAppointmentByIdAsync(appointment.Id) ?? appointment;
+        }
+
+        public async Task<Appointment> UpdateAppointmentCategoriesAsync(int appointmentId, List<int> categoryIds)
+        {
+            // 删除现有的category关系
+            var existingCategories = await _context.AppointmentCategories
+                .Where(ac => ac.AppointmentId == appointmentId)
+                .ToListAsync();
+            
+            _context.AppointmentCategories.RemoveRange(existingCategories);
+
+            // 添加新的category关系
+            if (categoryIds != null && categoryIds.Any())
+            {
+                foreach (var categoryId in categoryIds.Distinct())
+                {
+                    var appointmentCategory = new AppointmentCategory
+                    {
+                        AppointmentId = appointmentId,
+                        CategoryId = categoryId
+                    };
+                    _context.AppointmentCategories.Add(appointmentCategory);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            // 重新加载包含所有关系的appointment
+            return await GetAppointmentByIdAsync(appointmentId) ?? new Appointment();
+        }
+
+        public async Task<IEnumerable<Category>> GetAppointmentCategoriesAsync(int appointmentId)
+        {
+            return await _context.AppointmentCategories
+                .Where(ac => ac.AppointmentId == appointmentId)
+                .Include(ac => ac.Category)
+                .Select(ac => ac.Category)
+                .ToListAsync();
         }
 
         #endregion

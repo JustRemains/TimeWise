@@ -313,36 +313,7 @@
                       Grid.Row="0"
                       HorizontalAlignment="Stretch"/>
 
-            <StackPanel Grid.Row="1" Orientation="Vertical" Margin="5">
-                <Border BorderBrush="{DynamicResource BorderBrush}" 
-                        BorderThickness="1" 
-                        Margin="5" 
-                        Background="{DynamicResource PanelBackgroundBrush}"/>
 
-                <Label Content="Category Filters" 
-                       FontSize="16" 
-                       FontWeight="Bold" 
-                       HorizontalAlignment="Center" 
-                       Margin="0,5,0,5"
-                       Foreground="{DynamicResource TextForegroundBrush}"/>
-
-                <CheckBox Content="Work" Margin="10,3,0,3" 
-                         Style="{DynamicResource DarkCheckBoxStyle}"/>
-                <CheckBox Content="Personal" Margin="10,3,0,3" 
-                         Style="{DynamicResource DarkCheckBoxStyle}"/>
-                <CheckBox Content="Health" Margin="10,3,0,3" 
-                         Style="{DynamicResource DarkCheckBoxStyle}"/>
-                <CheckBox Content="Hobbies" Margin="10,3,0,3" 
-                         Style="{DynamicResource DarkCheckBoxStyle}"/>
-
-                <TextBox x:Name="SearchBox" 
-                         Margin="10,10,10,5" 
-                         Height="25" 
-                         Text="Search appointments..." 
-                         HorizontalAlignment="Stretch"
-                         HorizontalContentAlignment="Center"
-                         Style="{StaticResource ThemedTextBox}"/>
-            </StackPanel>
 
             <ScrollViewer Grid.Row="2" 
                          VerticalScrollBarVisibility="Auto" 
@@ -363,7 +334,7 @@
 
                     <TextBox x:Name="NotesBox" 
                              Margin="10,5,10,5" 
-                             Height="150"
+                             Height="295"
                              MinHeight="100"
                              MaxHeight="300"
                              TextWrapping="Wrap" 
@@ -396,6 +367,21 @@
                         <TextBlock Text="Day" Foreground="{DynamicResource TextForegroundBrush}" FontWeight="Bold"/>
                     </TabItem.Header>
                     <DockPanel>
+                        <!-- Category Filter Section -->
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10,10,10,5">
+                            <Label Content="Filter by Category:" 
+                                   FontWeight="Bold" 
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextForegroundBrush}"/>
+                            <ComboBox Name="categoryFilterComboBox" 
+                                     Width="200" 
+                                     Height="30" 
+                                     Margin="10,0,0,0"
+                                     SelectionChanged="CategoryFilter_SelectionChanged">
+                                <ComboBoxItem Content="All Categories" Tag="0" IsSelected="True"/>
+                            </ComboBox>
+                        </StackPanel>
+                        
                         <!-- Add Button first to reserve space at bottom -->
                         <Button DockPanel.Dock="Bottom" Content="+" FontSize="32" FontWeight="Bold" 
                                 Width="70" Height="70" 
@@ -436,6 +422,21 @@
                         <TextBlock Text="Week" Foreground="{DynamicResource TextForegroundBrush}" FontWeight="Bold"/>
                     </TabItem.Header>
                     <DockPanel>
+                        <!-- Category Filter Section -->
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10,10,10,5">
+                            <Label Content="Filter by Category:" 
+                                   FontWeight="Bold" 
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextForegroundBrush}"/>
+                            <ComboBox Name="categoryFilterComboBoxWeek" 
+                                     Width="200" 
+                                     Height="30" 
+                                     Margin="10,0,0,0"
+                                     SelectionChanged="CategoryFilterWeek_SelectionChanged">
+                                <ComboBoxItem Content="All Categories" Tag="0" IsSelected="True"/>
+                            </ComboBox>
+                        </StackPanel>
+                        
                         <!-- Add Button first to reserve space at bottom -->
                         <Button DockPanel.Dock="Bottom" Content="+" FontSize="32" FontWeight="Bold" 
                                 Width="70" Height="70" 

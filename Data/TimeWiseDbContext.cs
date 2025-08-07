@@ -11,6 +11,8 @@ namespace TimeWise.Data
     {
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<Category> Categories { get; set; }
+        public DbSet<Note> Notes { get; set; }
+        public DbSet<AppointmentCategory> AppointmentCategories { get; set; }
 
         public TimeWiseDbContext()
         {
@@ -79,6 +81,42 @@ namespace TimeWise.Data
                 // ?????? Date + StartTime ????????SQLite?TimeSpan????
             });
 
+            // ??Note??
+            modelBuilder.Entity<Note>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Content).IsRequired().HasMaxLength(2000);
+                entity.Property(e => e.Date).IsRequired();
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("datetime('now')");
+                
+                // ????
+                entity.HasIndex(e => e.Date);
+            });
+
+            // ??AppointmentCategory??（多对多关系）
+            modelBuilder.Entity<AppointmentCategory>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.AppointmentId).IsRequired();
+                entity.Property(e => e.CategoryId).IsRequired();
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
+
+                // 配置外键关系
+                entity.HasOne(e => e.Appointment)
+                      .WithMany(a => a.AppointmentCategories)
+                      .HasForeignKey(e => e.AppointmentId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Category)
+                      .WithMany(c => c.AppointmentCategories)
+                      .HasForeignKey(e => e.CategoryId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // 防止重复的Appointment-Category组合
+                entity.HasIndex(e => new { e.AppointmentId, e.CategoryId }).IsUnique();
+            });
+
             // ????
             SeedData(modelBuilder);
         }
@@ -139,6 +177,11 @@ namespace TimeWise.Data
                 {
                     category.UpdatedAt = DateTime.Now;
                 }
+                else if (entry.Entity is Note note)
+                {
+                    note.UpdatedAt = DateTime.Now;
+                }
+                // AppointmentCategory 没有UpdatedAt字段，所以不需要处理
             }
         }
     }

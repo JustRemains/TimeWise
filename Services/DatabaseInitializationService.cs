@@ -23,17 +23,11 @@ namespace TimeWise.Services
         {
             try
             {
-                // ???????
+                // 简化方法：只使用EnsureCreated，不处理迁移
+                // EnsureCreated会在数据库不存在时创建，存在时不做任何操作
                 await _context.Database.EnsureCreatedAsync();
-
-                // ?????????
-                var pendingMigrations = await _context.Database.GetPendingMigrationsAsync();
-                if (pendingMigrations.Any())
-                {
-                    await _context.Database.MigrateAsync();
-                }
-
-                // ???????
+                
+                // 无论数据库是新创建还是已存在，都验证数据完整性
                 await ValidateDataIntegrityAsync();
             }
             catch (Exception ex)
@@ -154,6 +148,29 @@ namespace TimeWise.Services
                 // ???????0
             }
             return 0;
+        }
+
+        /// <summary>
+        /// 从连接字符串中提取数据库文件路径
+        /// </summary>
+        private string? GetDbPathFromConnectionString(string? connectionString)
+        {
+            if (string.IsNullOrEmpty(connectionString))
+                return null;
+
+            // 解析SQLite连接字符串中的Data Source
+            var parts = connectionString.Split(';');
+            foreach (var part in parts)
+            {
+                var keyValue = part.Split('=');
+                if (keyValue.Length == 2 && 
+                    keyValue[0].Trim().Equals("Data Source", StringComparison.OrdinalIgnoreCase))
+                {
+                    return keyValue[1].Trim();
+                }
+            }
+
+            return null;
         }
     }
 

@@ -6,66 +6,174 @@
         xmlns:local="clr-namespace:TimeWise"
         xmlns:System="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="Add New Appointment" Height="750" Width="480" 
-        MinHeight="700" MinWidth="450" ResizeMode="CanResize">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <Grid>
+        Title="Add New Appointment" 
+        Height="650" Width="480" 
+        MinHeight="600" MinWidth="450" 
+        MaxHeight="700" MaxWidth="600"
+        ResizeMode="CanResize"
+        Background="{DynamicResource WindowBackgroundBrush}">
+    <Window.Resources>
+        <!-- 应用主题资源 -->
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/DarkTheme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- 主要内容区域 -->
+        <ScrollViewer Grid.Row="0" 
+                      VerticalScrollBarVisibility="Auto" 
+                      HorizontalScrollBarVisibility="Disabled"
+                      Margin="5">
             <StackPanel Margin="20">
                 
-                <Label Content="Add New Appointment" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,20"/>
+                <Label Content="Add New Appointment" 
+                       FontSize="20" 
+                       FontWeight="Bold" 
+                       HorizontalAlignment="Center" 
+                       Margin="0,10,0,20"
+                       Foreground="{DynamicResource TextForegroundBrush}"/>
                 
                 <!-- Title Section -->
-                <Label Content="Title" FontSize="16" FontWeight="Bold" HorizontalAlignment="Left" />
-                <TextBox Name="appointmentTitle" Margin="0,5,0,15" Height="30" FontSize="14" Text=""/>
+                <Label Content="Title" 
+                       FontSize="16" 
+                       FontWeight="Bold" 
+                       HorizontalAlignment="Left"
+                       Foreground="{DynamicResource TextForegroundBrush}"/>
+                <TextBox Name="appointmentTitle" 
+                         Margin="0,5,0,15" 
+                         Height="30" 
+                         FontSize="14" 
+                         Text=""
+                         Style="{DynamicResource ThemedTextBox}"/>
                 
                 <!-- Date Section -->
-                <Label Content="Date" FontSize="16" FontWeight="Bold" HorizontalAlignment="Left" />
-                <DatePicker Name="appointmentDate" Margin="0,5,0,15" Height="30" FontSize="14"/>
+                <Label Content="Date" 
+                       FontSize="16" 
+                       FontWeight="Bold" 
+                       HorizontalAlignment="Left"
+                       Foreground="{DynamicResource TextForegroundBrush}"/>
+                <DatePicker Name="appointmentDate" 
+                           Margin="0,5,0,15" 
+                           Height="30" 
+                           FontSize="14"/>
                 
                 <!-- Time Section -->
-                <Label Content="Start Time" FontSize="16" FontWeight="Bold" HorizontalAlignment="Left" />
+                <Label Content="Start Time" 
+                       FontSize="16" 
+                       FontWeight="Bold" 
+                       HorizontalAlignment="Left"
+                       Foreground="{DynamicResource TextForegroundBrush}"/>
                 <StackPanel Orientation="Horizontal" Margin="0,5,0,10">
                     <ComboBox Name="startHour" Width="60" Height="30" FontSize="14" SelectedIndex="9"/>
-                    <Label Content=":" FontSize="16" Margin="5,0" VerticalAlignment="Center"/>
+                    <Label Content=":" 
+                           FontSize="16" 
+                           Margin="5,0" 
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextForegroundBrush}"/>
                     <ComboBox Name="startMinute" Width="60" Height="30" FontSize="14" SelectedIndex="0"/>
                 </StackPanel>
                 
-                <Label Content="End Time" FontSize="16" FontWeight="Bold" HorizontalAlignment="Left" />
+                <Label Content="End Time" 
+                       FontSize="16" 
+                       FontWeight="Bold" 
+                       HorizontalAlignment="Left"
+                       Foreground="{DynamicResource TextForegroundBrush}"/>
                 <StackPanel Orientation="Horizontal" Margin="0,5,0,15">
                     <ComboBox Name="endHour" Width="60" Height="30" FontSize="14" SelectedIndex="10"/>
-                    <Label Content=":" FontSize="16" Margin="5,0" VerticalAlignment="Center"/>
+                    <Label Content=":" 
+                           FontSize="16" 
+                           Margin="5,0" 
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextForegroundBrush}"/>
                     <ComboBox Name="endMinute" Width="60" Height="30" FontSize="14" SelectedIndex="0"/>
                 </StackPanel>
                 
                 <!-- Category Section -->
-                <Label Content="Category" FontSize="16" FontWeight="Bold" HorizontalAlignment="Left" />
-                <StackPanel Orientation="Horizontal" Margin="0,5,0,15">
-                    <ComboBox Name="categoryComboBox" Width="320" Height="35" FontSize="14" IsEditable="True" 
-                              SelectionChanged="CategoryComboBox_SelectionChanged"/>
-                    <Button Name="addCategoryButton" Content="+" Width="35" Height="35" Margin="5,0,0,0" 
-                            FontSize="16" FontWeight="Bold" Click="AddCategory_Click" 
-                            Background="LightGreen" BorderBrush="Green"/>
-                    <Button Name="deleteCategoryButton" Content="×" Width="35" Height="35" Margin="5,0,0,0" 
-                            FontSize="16" FontWeight="Bold" Click="DeleteCategory_Click"
-                            Background="LightCoral" BorderBrush="Red"/>
+                <Label Content="Category" 
+                       FontSize="16" 
+                       FontWeight="Bold" 
+                       HorizontalAlignment="Left"
+                       Foreground="{DynamicResource TextForegroundBrush}"/>
+                <StackPanel Orientation="Horizontal" Margin="0,5,0,10">
+                    <ComboBox Name="categoryComboBox" 
+                             Width="320" 
+                             Height="35" 
+                             FontSize="14" 
+                             IsEditable="True" 
+                             SelectionChanged="CategoryComboBox_SelectionChanged"/>
+                    <Button Name="addCategoryButton" 
+                           Content="+" 
+                           Width="35" 
+                           Height="35" 
+                           Margin="5,0,0,0" 
+                           FontSize="16" 
+                           FontWeight="Bold" 
+                           Click="AddCategory_Click" 
+                           Background="{DynamicResource CalendarTodayBrush}" 
+                           Foreground="White"/>
+                    <Button Name="deleteCategoryButton" 
+                           Content="×" 
+                           Width="35" 
+                           Height="35" 
+                           Margin="5,0,0,0" 
+                           FontSize="16" 
+                           FontWeight="Bold" 
+                           Click="DeleteCategory_Click"
+                           Background="#FFE74C3C" 
+                           Foreground="White"/>
                 </StackPanel>
                 
-                <!-- Selected Category Display -->
-                <Border Name="selectedCategoryBorder" Height="40" Margin="0,0,0,15" 
-                        Background="LightBlue" CornerRadius="5" Visibility="Collapsed">
-                    <TextBlock Name="selectedCategoryText" Text="" FontSize="14" FontWeight="Bold" 
-                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Border>
+                <!-- Selected Categories Display - 支持多选显示 -->
+                <ScrollViewer Name="selectedCategoriesScrollViewer" 
+                             MaxHeight="120" 
+                             VerticalScrollBarVisibility="Auto"
+                             Margin="0,0,0,15">
+                    <WrapPanel Name="selectedCategoriesPanel" 
+                              Orientation="Horizontal">
+                        <!-- 选中的categories将动态添加到这里 -->
+                    </WrapPanel>
+                </ScrollViewer>
                 
                 <!-- Description Section -->
-                <Label Content="Description (Optional)" FontSize="16" FontWeight="Bold" HorizontalAlignment="Left" />
-                <TextBox Name="appointmentDescription" Margin="0,5,0,20" Height="80" FontSize="14" 
-                         TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
-
-                <Button Name="saveButton" Content="Save Appointment" Margin="0,15,0,20" Height="45" 
-                        FontSize="16" FontWeight="Bold" Click="SaveButton_Click"
-                        Background="LightBlue" BorderBrush="Blue"/>
+                <Label Content="Description (Optional)" 
+                       FontSize="16" 
+                       FontWeight="Bold" 
+                       HorizontalAlignment="Left"
+                       Foreground="{DynamicResource TextForegroundBrush}"/>
+                <TextBox Name="appointmentDescription" 
+                         Margin="0,5,0,20" 
+                         Height="80" 
+                         FontSize="14" 
+                         TextWrapping="Wrap" 
+                         AcceptsReturn="True" 
+                         VerticalScrollBarVisibility="Auto"
+                         Style="{DynamicResource ThemedTextBox}"/>
             </StackPanel>
-        </Grid>
-    </ScrollViewer>
+        </ScrollViewer>
+        
+        <!-- 固定在底部的Save按钮 -->
+        <Border Grid.Row="1" 
+                Background="{DynamicResource PanelBackgroundBrush}" 
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="20,10">
+            <Button Name="saveButton" 
+                    Content="Save Appointment" 
+                    Height="45" 
+                    FontSize="16" 
+                    FontWeight="Bold" 
+                    Click="SaveButton_Click"
+                    Background="{DynamicResource CalendarTodayBrush}" 
+                    Foreground="White"
+                    HorizontalAlignment="Stretch"/>
+        </Border>
+    </Grid>
 </Window>

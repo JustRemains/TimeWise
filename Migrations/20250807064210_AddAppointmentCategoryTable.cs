@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TimeWise.Migrations
 {
     /// <inheritdoc />
-    public partial class AddNotesFeature : Migration
+    public partial class AddAppointmentCategoryTable : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -36,10 +36,10 @@ namespace TimeWise.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Content = table.Column<string>(type: "TEXT", nullable: false),
-                    Date = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    Content = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: false),
+                    Date = table.Column<DateTime>(type: "DATE", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "datetime('now')"),
-                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "datetime('now')")
                 },
                 constraints: table =>
                 {
@@ -72,20 +72,58 @@ namespace TimeWise.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "AppointmentCategories",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    AppointmentId = table.Column<int>(type: "INTEGER", nullable: false),
+                    CategoryId = table.Column<int>(type: "INTEGER", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "datetime('now')")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AppointmentCategories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AppointmentCategories_Appointments_AppointmentId",
+                        column: x => x.AppointmentId,
+                        principalTable: "Appointments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AppointmentCategories_Categories_CategoryId",
+                        column: x => x.CategoryId,
+                        principalTable: "Categories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.InsertData(
                 table: "Categories",
                 columns: new[] { "Id", "ColorHex", "CreatedAt", "IsDefault", "Name", "UpdatedAt" },
                 values: new object[,]
                 {
-                    { 1, "#ADD8E6", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), true, "Work", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) },
-                    { 2, "#90EE90", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), true, "Personal", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) },
-                    { 3, "#FFFFE0", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), true, "Health", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) },
-                    { 4, "#FFDAB9", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), true, "Hobbies", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) },
-                    { 5, "#DDA0DD", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), true, "Meeting", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) },
-                    { 6, "#FFC0CB", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), true, "Appointment", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) },
-                    { 7, "#B0C4DE", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), true, "Travel", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) },
-                    { 8, "#F0E68C", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), true, "Education", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) }
+                    { 1, "#ADD8E6", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), true, "Work", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc) },
+                    { 2, "#90EE90", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), true, "Personal", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc) },
+                    { 3, "#FFFFE0", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), true, "Health", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc) },
+                    { 4, "#FFDAB9", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), true, "Hobbies", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc) },
+                    { 5, "#DDA0DD", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), true, "Meeting", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc) },
+                    { 6, "#FFC0CB", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), true, "Appointment", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc) },
+                    { 7, "#B0C4DE", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), true, "Travel", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc) },
+                    { 8, "#F0E68C", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), true, "Education", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc) }
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AppointmentCategories_AppointmentId_CategoryId",
+                table: "AppointmentCategories",
+                columns: new[] { "AppointmentId", "CategoryId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AppointmentCategories_CategoryId",
+                table: "AppointmentCategories",
+                column: "CategoryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Appointments_CategoryId",
@@ -111,18 +149,20 @@ namespace TimeWise.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Notes_Date",
                 table: "Notes",
-                column: "Date",
-                unique: true);
+                column: "Date");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Appointments");
+                name: "AppointmentCategories");
 
             migrationBuilder.DropTable(
                 name: "Notes");
+
+            migrationBuilder.DropTable(
+                name: "Appointments");
 
             migrationBuilder.DropTable(
                 name: "Categories");

@@ -47,6 +47,7 @@ namespace TimeWise
                         // 注册服务
                         services.AddScoped<IAppointmentService, AppointmentService>();
                         services.AddScoped<ICategoryService, CategoryService>();
+                        services.AddScoped<INoteService, NoteService>();
                         services.AddScoped<DatabaseInitializationService>();
 
                         // 注册窗口
@@ -60,14 +61,6 @@ namespace TimeWise
 
                 // 初始化数据库
                 using var scope = _host.Services.CreateScope();
-                using var context = scope.ServiceProvider.GetRequiredService<TimeWiseDbContext>();
-                
-                bool canConnect = await context.Database.CanConnectAsync();
-                if (!canConnect)
-                {
-                    await context.Database.EnsureCreatedAsync();
-                }
-                
                 var dbInitService = scope.ServiceProvider.GetRequiredService<DatabaseInitializationService>();
                 await dbInitService.InitializeDatabaseAsync();
                 FileLogger.Log("Database initialized successfully");

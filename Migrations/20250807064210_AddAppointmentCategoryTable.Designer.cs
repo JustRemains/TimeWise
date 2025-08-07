@@ -11,8 +11,8 @@ using TimeWise.Data;
 namespace TimeWise.Migrations
 {
     [DbContext(typeof(TimeWiseDbContext))]
-    [Migration("20250807011310_FixSeedDataStaticValues")]
-    partial class FixSeedDataStaticValues
+    [Migration("20250807064210_AddAppointmentCategoryTable")]
+    partial class AddAppointmentCategoryTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -66,6 +66,33 @@ namespace TimeWise.Migrations
                     b.HasIndex("Title");
 
                     b.ToTable("Appointments");
+                });
+
+            modelBuilder.Entity("TimeWise.Models.AppointmentCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AppointmentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("datetime('now')");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("AppointmentId", "CategoryId")
+                        .IsUnique();
+
+                    b.ToTable("AppointmentCategories");
                 });
 
             modelBuilder.Entity("TimeWise.Models.Category", b =>
@@ -179,6 +206,37 @@ namespace TimeWise.Migrations
                         });
                 });
 
+            modelBuilder.Entity("TimeWise.Models.Note", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("datetime('now')");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("DATE");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("datetime('now')");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date");
+
+                    b.ToTable("Notes");
+                });
+
             modelBuilder.Entity("TimeWise.Models.Appointment", b =>
                 {
                     b.HasOne("TimeWise.Models.Category", "Category")
@@ -190,8 +248,34 @@ namespace TimeWise.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("TimeWise.Models.AppointmentCategory", b =>
+                {
+                    b.HasOne("TimeWise.Models.Appointment", "Appointment")
+                        .WithMany("AppointmentCategories")
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TimeWise.Models.Category", "Category")
+                        .WithMany("AppointmentCategories")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("TimeWise.Models.Appointment", b =>
+                {
+                    b.Navigation("AppointmentCategories");
+                });
+
             modelBuilder.Entity("TimeWise.Models.Category", b =>
                 {
+                    b.Navigation("AppointmentCategories");
+
                     b.Navigation("Appointments");
                 });
 #pragma warning restore 612, 618

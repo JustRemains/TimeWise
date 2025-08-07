@@ -23,13 +23,47 @@ namespace TimeWise
     {
         private readonly ICategoryService _categoryService;
         private List<Category> _categories = new();
+        private List<Category> _selectedCategories = new(); // 存储选中的多个categories
 
         public AddAppointment(ICategoryService categoryService)
         {
             InitializeComponent();
             _categoryService = categoryService;
+            LoadCurrentTheme();
             InitializeTimeComboBoxes();
             Loaded += AddAppointment_Loaded;
+        }
+
+        private void LoadCurrentTheme()
+        {
+            try
+            {
+                // 获取主窗口的当前主题
+                var mainWindow = Application.Current.MainWindow as MainWindow;
+                if (mainWindow != null)
+                {
+                    // 清除现有资源
+                    this.Resources.MergedDictionaries.Clear();
+                    
+                    // 复制主窗口的主题资源
+                    foreach (ResourceDictionary dict in mainWindow.Resources.MergedDictionaries)
+                    {
+                        this.Resources.MergedDictionaries.Add(dict);
+                    }
+                }
+                else
+                {
+                    // 默认加载暗黑主题
+                    var darkTheme = new ResourceDictionary();
+                    darkTheme.Source = new Uri("Themes/DarkTheme.xaml", UriKind.Relative);
+                    this.Resources.MergedDictionaries.Add(darkTheme);
+                }
+            }
+            catch (Exception ex)
+            {
+                // 如果加载主题失败，使用默认样式
+                System.Diagnostics.Debug.WriteLine($"Failed to load theme: {ex.Message}");
+            }
         }
 
         private async void AddAppointment_Loaded(object sender, RoutedEventArgs e)
@@ -96,10 +130,88 @@ namespace TimeWise
                 
                 if (category != null)
                 {
-                    selectedCategoryBorder.Background = GetBrushFromHex(category.ColorHex);
-                    selectedCategoryText.Text = categoryName;
-                    selectedCategoryBorder.Visibility = Visibility.Visible;
+                    // 检查是否已经选中这个category
+                    if (!_selectedCategories.Any(c => c.Id == category.Id))
+                    {
+                        _selectedCategories.Add(category);
+                        AddSelectedCategoryToDisplay(category);
+                    }
+                    
+                    // 清空ComboBox选择，允许继续选择其他categories
+                    categoryComboBox.SelectedIndex = -1;
                 }
+            }
+        }
+
+        private void AddSelectedCategoryToDisplay(Category category)
+        {
+            // 创建一个显示选中category的Border
+            Border categoryBorder = new Border
+            {
+                Background = GetBrushFromHex(category.ColorHex),
+                BorderBrush = Brushes.DarkGray,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(15),
+                Margin = new Thickness(5),
+                Padding = new Thickness(10, 5, 10, 5),
+                Tag = category.Id
+            };
+
+            // 创建包含category名称和删除按钮的StackPanel
+            StackPanel categoryContent = new StackPanel
+            {
+                Orientation = Orientation.Horizontal
+            };
+
+            // Category名称文本，设置为黑色
+            TextBlock categoryText = new TextBlock
+            {
+                Text = category.Name,
+                FontSize = 12,
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.Black, // 强制设置为黑色
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            // 删除按钮
+            Button removeButton = new Button
+            {
+                Content = "×",
+                FontSize = 10,
+                FontWeight = FontWeights.Bold,
+                Width = 16,
+                Height = 16,
+                Margin = new Thickness(5, 0, 0, 0),
+                Background = Brushes.Red,
+                Foreground = Brushes.White,
+                BorderThickness = new Thickness(0),
+                Cursor = Cursors.Hand
+            };
+
+            // 删除按钮点击事件
+            removeButton.Click += (sender, e) => RemoveSelectedCategory(category.Id);
+
+            categoryContent.Children.Add(categoryText);
+            categoryContent.Children.Add(removeButton);
+            categoryBorder.Child = categoryContent;
+
+            // 添加到显示面板
+            selectedCategoriesPanel.Children.Add(categoryBorder);
+        }
+
+        private void RemoveSelectedCategory(int categoryId)
+        {
+            // 从选中列表中移除
+            _selectedCategories.RemoveAll(c => c.Id == categoryId);
+
+            // 从显示面板中移除对应的UI元素
+            var borderToRemove = selectedCategoriesPanel.Children
+                .OfType<Border>()
+                .FirstOrDefault(b => b.Tag is int id && id == categoryId);
+
+            if (borderToRemove != null)
+            {
+                selectedCategoriesPanel.Children.Remove(borderToRemove);
             }
         }
 
@@ -180,7 +292,6 @@ namespace TimeWise
                         if (success)
                         {
                             await LoadCategoriesAsync();
-                            selectedCategoryBorder.Visibility = Visibility.Collapsed;
                             MessageBox.Show($"Category '{category.Name}' deleted successfully!", "Category Deleted", MessageBoxButton.OK, MessageBoxImage.Information);
                         }
                         else
@@ -205,21 +316,25 @@ namespace TimeWise
         public DateTime? SelectedDate => appointmentDate.SelectedDate;
         public string SelectedStartTime => $"{startHour.Text}:{startMinute.Text}";
         public string SelectedEndTime => $"{endHour.Text}:{endMinute.Text}";
-        public string SelectedCategory => selectedCategoryText.Text;
         public string SelectedDescription => appointmentDescription.Text;
-        public Brush SelectedCategoryColor => selectedCategoryBorder.Background;
+        
+        // 多选categories支持
+        public List<Category> SelectedCategories => _selectedCategories.ToList();
+        public string SelectedCategoriesString => string.Join(", ", _selectedCategories.Select(c => c.Name));
         
         public int SelectedCategoryId
         {
             get
             {
-                if (categoryComboBox.SelectedItem is ComboBoxItem selectedItem && selectedItem.Tag is int categoryId)
-                {
-                    return categoryId;
-                }
-                return _categories.FirstOrDefault()?.Id ?? 1; // Return first category ID as fallback
+                // 返回第一个选中的category ID，如果没有选中则返回默认值
+                return _selectedCategories.FirstOrDefault()?.Id ?? _categories.FirstOrDefault()?.Id ?? 1;
             }
         }
+
+        // 为了保持向后兼容性，保留原有属性但基于新的多选逻辑
+        public string SelectedCategory => _selectedCategories.FirstOrDefault()?.Name ?? "";
+        public Brush SelectedCategoryColor => _selectedCategories.Any() ? 
+            GetBrushFromHex(_selectedCategories.First().ColorHex) : Brushes.LightGray;
 
         /// <summary>
         /// 设置默认日期
@@ -227,6 +342,55 @@ namespace TimeWise
         public void SetDefaultDate(DateTime date)
         {
             appointmentDate.SelectedDate = date;
+        }
+
+        /// <summary>
+        /// 预填充appointment数据用于编辑
+        /// </summary>
+        public void PreFillAppointmentData(Appointment appointment)
+        {
+            try
+            {
+                appointmentTitle.Text = appointment.Title;
+                appointmentDescription.Text = appointment.Description ?? "";
+                appointmentDate.SelectedDate = appointment.Date;
+                
+                // 设置时间
+                startHour.SelectedItem = appointment.StartTime.Hours.ToString("00");
+                startMinute.SelectedItem = appointment.StartTime.Minutes.ToString("00");
+                endHour.SelectedItem = appointment.EndTime.Hours.ToString("00");
+                endMinute.SelectedItem = appointment.EndTime.Minutes.ToString("00");
+                
+                // 设置categories - 加载所有相关的categories
+                _selectedCategories.Clear();
+                selectedCategoriesPanel.Children.Clear();
+                
+                // 首先添加主category
+                var primaryCategory = _categories.FirstOrDefault(c => c.Id == appointment.CategoryId);
+                if (primaryCategory != null)
+                {
+                    _selectedCategories.Add(primaryCategory);
+                    AddSelectedCategoryToDisplay(primaryCategory);
+                }
+                
+                // 然后添加通过多对多关系关联的其他categories
+                if (appointment.AppointmentCategories?.Any() == true)
+                {
+                    foreach (var appointmentCategory in appointment.AppointmentCategories)
+                    {
+                        var category = appointmentCategory.Category ?? _categories.FirstOrDefault(c => c.Id == appointmentCategory.CategoryId);
+                        if (category != null && category.Id != appointment.CategoryId && !_selectedCategories.Any(c => c.Id == category.Id))
+                        {
+                            _selectedCategories.Add(category);
+                            AddSelectedCategoryToDisplay(category);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error pre-filling appointment data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -246,9 +410,9 @@ namespace TimeWise
                     return;
                 }
 
-                if (string.IsNullOrWhiteSpace(selectedCategoryText.Text))
+                if (!_selectedCategories.Any())
                 {
-                    MessageBox.Show("Please select a category for the appointment.", "Input Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Please select at least one category for the appointment.", "Input Required", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 

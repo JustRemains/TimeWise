@@ -30,6 +30,7 @@ namespace TimeWise.Models
         [Column(TypeName = "TIME")]
         public TimeSpan EndTime { get; set; }
 
+        // 保留CategoryId以便向后兼容，但它将成为主要Category
         [Required]
         public int CategoryId { get; set; }
 
@@ -37,11 +38,18 @@ namespace TimeWise.Models
 
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
-        // ????
+        // 单个主要Category的导航属性（向后兼容）
         [ForeignKey("CategoryId")]
         public virtual Category Category { get; set; } = null!;
 
-        // ????
+        // 多对多关系：一个Appointment可以有多个Categories
+        public virtual ICollection<AppointmentCategory> AppointmentCategories { get; set; } = new List<AppointmentCategory>();
+
+        // 便捷属性：获取所有相关的Categories
+        [NotMapped]
+        public virtual IEnumerable<Category> Categories => AppointmentCategories.Select(ac => ac.Category);
+
+        // 计算属性
         [NotMapped]
         public DateTime StartDateTime => Date.Date + StartTime;
 
