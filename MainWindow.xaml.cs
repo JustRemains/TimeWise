@@ -8,9 +8,11 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Media.Effects;
 using TimeWise.Models;
 using TimeWise.Services;
 using TimeWise.Utilities;
+using System.IO;
 
 namespace TimeWise
 {
@@ -22,12 +24,16 @@ namespace TimeWise
         private readonly IAppointmentService _appointmentService;
         private readonly ICategoryService _categoryService;
         private DateTime _selectedDate;
+        private bool _isDarkMode = false;
 
         public MainWindow(IAppointmentService appointmentService, ICategoryService categoryService)
         {
             FileLogger.Log("MainWindow constructor called");
             try
             {
+                // Load theme preference BEFORE InitializeComponent
+                LoadThemePreference();
+                
                 InitializeComponent();
                 FileLogger.Log("InitializeComponent completed");
                 
@@ -38,10 +44,10 @@ namespace TimeWise
                 Loaded += MainWindow_Loaded;
                 
                 // 连接日历选择事件
-                var calendar = FindName("MainCalendar") as Calendar;
+                var calendar = FindName("MainCalendar") as TimeWise.Controls.SimpleCalendar;
                 if (calendar != null)
                 {
-                    calendar.SelectedDatesChanged += Calendar_SelectedDatesChanged;
+                    calendar.DateSelected += Calendar_DateSelected;
                     calendar.SelectedDate = DateTime.Today;
                 }
                 
@@ -58,6 +64,226 @@ namespace TimeWise
             {
                 FileLogger.LogException("MainWindow constructor", ex);
                 throw;
+            }
+        }
+
+        private void LoadThemePreference()
+        {
+            try
+            {
+                string settingsPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TimeWise", "settings.txt");
+                if (File.Exists(settingsPath))
+                {
+                    string themePreference = File.ReadAllText(settingsPath).Trim();
+                    _isDarkMode = themePreference.Equals("Dark", StringComparison.OrdinalIgnoreCase);
+                    ApplyTheme(_isDarkMode);
+                    UpdateThemeButtonAppearance();
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("LoadThemePreference", ex);
+                // If loading fails, use default light theme
+                _isDarkMode = false;
+            }
+        }
+
+        private void SaveThemePreference()
+        {
+            try
+            {
+                string settingsDir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TimeWise");
+                Directory.CreateDirectory(settingsDir);
+                string settingsPath = System.IO.Path.Combine(settingsDir, "settings.txt");
+                File.WriteAllText(settingsPath, _isDarkMode ? "Dark" : "Light");
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("SaveThemePreference", ex);
+            }
+        }
+
+        private void Darkmode_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _isDarkMode = !_isDarkMode;
+                ApplyTheme(_isDarkMode);
+                UpdateThemeButtonAppearance();
+                SaveThemePreference();
+                FileLogger.Log($"Theme switched to: {(_isDarkMode ? "Dark" : "Light")}");
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("Darkmode_Click", ex);
+                MessageBox.Show($"Error switching theme: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void UpdateThemeButtonAppearance()
+        {
+            try
+            {
+                var button = FindName("Darkmode") as Button;
+                if (button != null)
+                {
+                    // Update button text and tooltip
+                    button.Content = _isDarkMode ? "LIGHT" : "DARK";
+                    button.ToolTip = _isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode";
+                    
+                    // Optional: Change button background to indicate current mode
+                    if (_isDarkMode)
+                    {
+                        button.Background = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255)); // Subtle white overlay
+                    }
+                    else
+                    {
+                        button.Background = null; // Transparent for light mode
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("UpdateThemeButtonAppearance", ex);
+            }
+        }
+
+        private void ApplyTheme(bool isDark)
+        {
+            try
+            {
+                var app = Application.Current;
+                var existingDict = app.Resources.MergedDictionaries.FirstOrDefault();
+                
+                if (existingDict != null)
+                {
+                    app.Resources.MergedDictionaries.Remove(existingDict);
+                }
+
+                var newDict = new ResourceDictionary();
+                if (isDark)
+                {
+                    newDict.Source = new Uri("Themes/DarkTheme.xaml", UriKind.Relative);
+                }
+                else
+                {
+                    newDict.Source = new Uri("Themes/LightTheme.xaml", UriKind.Relative);
+                }
+                
+                app.Resources.MergedDictionaries.Add(newDict);
+                
+                // Force update all UI elements immediately
+                this.UpdateLayout();
+                this.InvalidateVisual();
+                
+                // Force apply styles to specific controls
+                ForceApplyControlStyles(isDark);
+                
+                // Update existing appointment cards with new theme
+                UpdateExistingCardsTheme(isDark);
+                
+                // Force refresh the calendar control
+                if (MainCalendar != null)
+                {
+                    MainCalendar.UpdateLayout();
+                    MainCalendar.InvalidateVisual();
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("ApplyTheme", ex);
+            }
+        }
+
+        private void ForceApplyControlStyles(bool isDark)
+        {
+            try
+            {
+                var foregroundColor = isDark ? Brushes.White : Brushes.Black;
+                
+                // Force custom calendar styles
+                var calendar = FindName("MainCalendar") as TimeWise.Controls.SimpleCalendar;
+                if (calendar != null)
+                {
+                    // The custom calendar will handle its own theming through DynamicResource
+                    calendar.UpdateLayout();
+                }
+                
+                // Force TabControl styles
+                var tabControl = FindName("MainTabControl") as TabControl;
+                if (tabControl != null)
+                {
+                    tabControl.Foreground = foregroundColor;
+                    
+                    // Force update each TabItem
+                    foreach (TabItem item in tabControl.Items)
+                    {
+                        item.Foreground = foregroundColor;
+                        if (item.Header is TextBlock textBlock)
+                        {
+                            textBlock.Foreground = foregroundColor;
+                        }
+                        item.UpdateLayout();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("ForceApplyControlStyles", ex);
+            }
+        }
+
+        private void UpdateExistingCardsTheme(bool isDark)
+        {
+            try
+            {
+                // Update card shadows for current appointments
+                UpdateCardShadows(appointmentList, isDark);
+                UpdateCardShadows(weekAppointmentList, isDark);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("UpdateExistingCardsTheme", ex);
+            }
+        }
+
+        private void UpdateCardShadows(StackPanel container, bool isDark)
+        {
+            try
+            {
+                foreach (UIElement element in container.Children)
+                {
+                    if (element is Grid cardGrid)
+                    {
+                        foreach (UIElement child in cardGrid.Children)
+                        {
+                            if (child is Border border && border.Effect is DropShadowEffect shadow)
+                            {
+                                // Update shadow color based on theme
+                                shadow.Color = isDark ? Colors.Black : Colors.Gray;
+                                shadow.Opacity = isDark ? 0.6 : 0.3;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("UpdateCardShadows", ex);
+            }
+        }
+
+        private async void Calendar_DateSelected(object? sender, DateTime selectedDate)
+        {
+            try
+            {
+                _selectedDate = selectedDate;
+                FileLogger.Log($"Calendar date selected: {_selectedDate:yyyy-MM-dd}");
+                await LoadAppointmentsAsync();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("Calendar_DateSelected", ex);
             }
         }
 
@@ -84,6 +310,9 @@ namespace TimeWise
             FileLogger.Log("MainWindow_Loaded called");
             try
             {
+                // Force apply theme styles after window is fully loaded
+                ForceApplyControlStyles(_isDarkMode);
+                
                 await LoadAppointmentsAsync();
                 FileLogger.Log("MainWindow loaded successfully");
             }
@@ -175,10 +404,10 @@ namespace TimeWise
                         Text = $"No appointments for {_selectedDate:yyyy-MM-dd}",
                         FontSize = 16,
                         FontStyle = FontStyles.Italic,
-                        Foreground = Brushes.Gray,
                         HorizontalAlignment = HorizontalAlignment.Center,
                         Margin = new Thickness(0, 20, 0, 0)
                     };
+                    noAppointmentsText.SetResourceReference(TextBlock.ForegroundProperty, "SecondaryTextBrush");
                     appointmentList.Children.Add(noAppointmentsText);
                 }
                 else
@@ -234,31 +463,41 @@ namespace TimeWise
                     Tag = appointment.Id // Store appointment ID for deletion
                 };
 
-                // Create the appointment content
+                // Convert hex color to brush
+                Brush categoryColor = GetBrushFromHex(appointment.Category.ColorHex);
+                
+                // Get appropriate text color based on background brightness
+                Brush textColor = GetContrastingTextColor(categoryColor);
+
+                // Create the appointment content with appropriate text colors
                 TextBlock titleTextBlock = new TextBlock
                 {
                     Text = appointment.Title,
                     FontSize = 16,
-                    FontWeight = FontWeights.Bold
+                    FontWeight = FontWeights.Bold,
+                    Foreground = textColor
                 };
 
                 TextBlock dateTextBlock = new TextBlock
                 {
                     Text = $"Date: {appointment.Date:yyyy-MM-dd}",
                     FontSize = 12,
+                    Foreground = textColor
                 };
 
                 TextBlock timeTextBlock = new TextBlock
                 {
                     Text = $"Time: {appointment.TimeRange}",
                     FontSize = 12,
+                    Foreground = textColor
                 };
 
                 TextBlock categoryTextBlock = new TextBlock
                 {
                     Text = $"Category: {appointment.Category.Name}",
                     FontSize = 12,
-                    FontWeight = FontWeights.Bold
+                    FontWeight = FontWeights.Bold,
+                    Foreground = textColor
                 };
 
                 // 如果有描述，也显示出来
@@ -276,13 +515,11 @@ namespace TimeWise
                         FontSize = 11,
                         FontStyle = FontStyles.Italic,
                         Margin = new Thickness(0, 5, 0, 0),
-                        TextWrapping = TextWrapping.Wrap
+                        TextWrapping = TextWrapping.Wrap,
+                        Foreground = textColor
                     };
                     contentPanel.Children.Add(descriptionTextBlock);
                 }
-
-                // Convert hex color to brush
-                Brush categoryColor = GetBrushFromHex(appointment.Category.ColorHex);
 
                 // Create the enhanced border with appointment content
                 Border appointmentBorder = new Border
@@ -293,6 +530,17 @@ namespace TimeWise
                     CornerRadius = new CornerRadius(10),
                     Margin = new Thickness(5),
                     Child = contentPanel
+                };
+
+                // Apply theme-aware shadow
+                var shadowColor = _isDarkMode ? Colors.Black : Colors.Gray;
+                var shadowOpacity = _isDarkMode ? 0.6 : 0.3;
+                appointmentBorder.Effect = new DropShadowEffect
+                {
+                    Color = shadowColor,
+                    BlurRadius = 6,
+                    Opacity = shadowOpacity,
+                    ShadowDepth = 3
                 };
 
                 // Apply the enhanced card style if it exists
@@ -471,16 +719,36 @@ namespace TimeWise
                 return FindParent<T>(parentObject);
         }
 
-        // Helper method to convert hex color to brush
+        // Helper method to convert hex color to brush with theme-aware adjustment
         private Brush GetBrushFromHex(string hexColor)
         {
             try
             {
-                return (Brush)new BrushConverter().ConvertFromString(hexColor)!;
+                var brush = (Brush)new BrushConverter().ConvertFromString(hexColor)!;
+                
+                // In dark mode, lighten very dark colors for better visibility
+                if (_isDarkMode && brush is SolidColorBrush solidBrush)
+                {
+                    var color = solidBrush.Color;
+                    var brightness = (color.R * 0.299 + color.G * 0.587 + color.B * 0.114) / 255;
+                    
+                    // If the color is too dark, lighten it
+                    if (brightness < 0.3)
+                    {
+                        var factor = 1.5; // Lighten factor
+                        var newR = Math.Min(255, (int)(color.R * factor));
+                        var newG = Math.Min(255, (int)(color.G * factor));
+                        var newB = Math.Min(255, (int)(color.B * factor));
+                        
+                        return new SolidColorBrush(Color.FromRgb((byte)newR, (byte)newG, (byte)newB));
+                    }
+                }
+                
+                return brush;
             }
             catch
             {
-                return Brushes.LightGray;
+                return _isDarkMode ? Brushes.DarkGray : Brushes.LightGray;
             }
         }
 
@@ -490,7 +758,18 @@ namespace TimeWise
             {
                 if (sender is TabControl tabControl && tabControl.SelectedItem is TabItem selectedTab)
                 {
-                    string tabHeader = selectedTab.Header?.ToString() ?? "";
+                    string tabHeader = "";
+                    
+                    // Handle TextBlock header
+                    if (selectedTab.Header is TextBlock textBlock)
+                    {
+                        tabHeader = textBlock.Text;
+                    }
+                    else
+                    {
+                        tabHeader = selectedTab.Header?.ToString() ?? "";
+                    }
+                    
                     FileLogger.Log($"Tab changed to: {tabHeader}");
                     
                     if (tabHeader == "Week")
@@ -539,10 +818,10 @@ namespace TimeWise
                         Text = $"No appointments for week of {startOfWeek:yyyy-MM-dd}",
                         FontSize = 16,
                         FontStyle = FontStyles.Italic,
-                        Foreground = Brushes.Gray,
                         HorizontalAlignment = HorizontalAlignment.Center,
                         Margin = new Thickness(0, 20, 0, 0)
                     };
+                    noAppointmentsText.SetResourceReference(TextBlock.ForegroundProperty, "SecondaryTextBrush");
                     weekAppointmentList.Children.Add(noAppointmentsText);
                 }
                 else
@@ -613,18 +892,27 @@ namespace TimeWise
             {
                 Text = $"{dayName}, {date:yyyy-MM-dd}",
                 FontSize = 18,
-                FontWeight = FontWeights.Bold,
-                Foreground = date.Date == DateTime.Today ? Brushes.DarkBlue : Brushes.Black
+                FontWeight = FontWeights.Bold
             };
+            
+            // Use theme-aware colors
+            if (date.Date == DateTime.Today)
+            {
+                dateText.Foreground = Brushes.DarkBlue; // Keep special color for today
+            }
+            else
+            {
+                dateText.SetResourceReference(TextBlock.ForegroundProperty, "TextForegroundBrush");
+            }
 
             var countText = new TextBlock
             {
                 Text = $"({appointmentCount} appointment{(appointmentCount != 1 ? "s" : "")})",
                 FontSize = 14,
                 FontStyle = FontStyles.Italic,
-                Foreground = Brushes.Gray,
                 Margin = new Thickness(10, 2, 0, 0)
             };
+            countText.SetResourceReference(TextBlock.ForegroundProperty, "SecondaryTextBrush");
 
             headerPanel.Children.Add(dateText);
             headerPanel.Children.Add(countText);
@@ -664,31 +952,41 @@ namespace TimeWise
                     Tag = appointment.Id // Store appointment ID for deletion
                 };
 
-                // 创建与Day视图相同的内容结构
+                // Convert hex color to brush
+                Brush categoryColor = GetBrushFromHex(appointment.Category.ColorHex);
+                
+                // Get appropriate text color based on background brightness
+                Brush textColor = GetContrastingTextColor(categoryColor);
+
+                // 创建与Day视图相同的内容结构，使用适当的文本颜色
                 TextBlock titleTextBlock = new TextBlock
                 {
                     Text = appointment.Title,
                     FontSize = 16,
-                    FontWeight = FontWeights.Bold
+                    FontWeight = FontWeights.Bold,
+                    Foreground = textColor
                 };
 
                 TextBlock dateTextBlock = new TextBlock
                 {
                     Text = $"Date: {appointment.Date:yyyy-MM-dd}",
                     FontSize = 12,
+                    Foreground = textColor
                 };
 
                 TextBlock timeTextBlock = new TextBlock
                 {
                     Text = $"Time: {appointment.TimeRange}",
                     FontSize = 12,
+                    Foreground = textColor
                 };
 
                 TextBlock categoryTextBlock = new TextBlock
                 {
                     Text = $"Category: {appointment.Category.Name}",
                     FontSize = 12,
-                    FontWeight = FontWeights.Bold
+                    FontWeight = FontWeights.Bold,
+                    Foreground = textColor
                 };
 
                 // 创建内容面板
@@ -707,13 +1005,11 @@ namespace TimeWise
                         FontSize = 11,
                         FontStyle = FontStyles.Italic,
                         Margin = new Thickness(0, 5, 0, 0),
-                        TextWrapping = TextWrapping.Wrap
+                        TextWrapping = TextWrapping.Wrap,
+                        Foreground = textColor
                     };
                     contentPanel.Children.Add(descriptionTextBlock);
                 }
-
-                // 使用与Day视图相同的类别颜色
-                Brush categoryColor = GetBrushFromHex(appointment.Category.ColorHex);
 
                 // 创建与Day视图相同的边框样式
                 Border appointmentBorder = new Border
@@ -724,6 +1020,17 @@ namespace TimeWise
                     CornerRadius = new CornerRadius(10),
                     Margin = new Thickness(5),
                     Child = contentPanel
+                };
+
+                // Apply theme-aware shadow
+                var shadowColor = _isDarkMode ? Colors.Black : Colors.Gray;
+                var shadowOpacity = _isDarkMode ? 0.6 : 0.3;
+                appointmentBorder.Effect = new DropShadowEffect
+                {
+                    Color = shadowColor,
+                    BlurRadius = 6,
+                    Opacity = shadowOpacity,
+                    ShadowDepth = 3
                 };
 
                 // 应用与Day视图相同的卡片样式
@@ -793,9 +1100,9 @@ namespace TimeWise
             var separator = new Border
             {
                 Height = 1,
-                Background = Brushes.LightGray,
                 Margin = new Thickness(5, 5, 5, 10)
             };
+            separator.SetResourceReference(Border.BackgroundProperty, "SeparatorBrush");
             weekAppointmentList.Children.Add(separator);
         }
 
@@ -853,6 +1160,30 @@ namespace TimeWise
             {
                 FileLogger.LogException("DeleteAppointmentFromWeekView", ex);
                 MessageBox.Show($"Error deleting appointment: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        
+        private Brush GetContrastingTextColor(Brush backgroundBrush)
+        {
+            try
+            {
+                if (backgroundBrush is SolidColorBrush solidBrush)
+                {
+                    Color color = solidBrush.Color;
+                    
+                    // Calculate relative luminance using the standard formula
+                    double luminance = (0.299 * color.R + 0.587 * color.G + 0.114 * color.B) / 255;
+                    
+                    // Return black for light backgrounds, white for dark backgrounds
+                    return luminance > 0.5 ? Brushes.Black : Brushes.White;
+                }
+                
+                // Default to black text if we can't determine the background color
+                return Brushes.Black;
+            }
+            catch
+            {
+                return Brushes.Black;
             }
         }
     }

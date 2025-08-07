@@ -88,16 +88,18 @@ namespace TimeWise.Data
         /// </summary>
         private void SeedData(ModelBuilder modelBuilder)
         {
-            // ??????
+            // ?????? - ???DateTime.Now???????
+            var seedDateTime = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            
             modelBuilder.Entity<Category>().HasData(
-                new Category { Id = 1, Name = "Work", ColorHex = "#ADD8E6", IsDefault = true, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now },
-                new Category { Id = 2, Name = "Personal", ColorHex = "#90EE90", IsDefault = true, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now },
-                new Category { Id = 3, Name = "Health", ColorHex = "#FFFFE0", IsDefault = true, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now },
-                new Category { Id = 4, Name = "Hobbies", ColorHex = "#FFDAB9", IsDefault = true, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now },
-                new Category { Id = 5, Name = "Meeting", ColorHex = "#DDA0DD", IsDefault = true, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now },
-                new Category { Id = 6, Name = "Appointment", ColorHex = "#FFC0CB", IsDefault = true, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now },
-                new Category { Id = 7, Name = "Travel", ColorHex = "#B0C4DE", IsDefault = true, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now },
-                new Category { Id = 8, Name = "Education", ColorHex = "#F0E68C", IsDefault = true, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now }
+                new Category { Id = 1, Name = "Work", ColorHex = "#ADD8E6", IsDefault = true, CreatedAt = seedDateTime, UpdatedAt = seedDateTime },
+                new Category { Id = 2, Name = "Personal", ColorHex = "#90EE90", IsDefault = true, CreatedAt = seedDateTime, UpdatedAt = seedDateTime },
+                new Category { Id = 3, Name = "Health", ColorHex = "#FFFFE0", IsDefault = true, CreatedAt = seedDateTime, UpdatedAt = seedDateTime },
+                new Category { Id = 4, Name = "Hobbies", ColorHex = "#FFDAB9", IsDefault = true, CreatedAt = seedDateTime, UpdatedAt = seedDateTime },
+                new Category { Id = 5, Name = "Meeting", ColorHex = "#DDA0DD", IsDefault = true, CreatedAt = seedDateTime, UpdatedAt = seedDateTime },
+                new Category { Id = 6, Name = "Appointment", ColorHex = "#FFC0CB", IsDefault = true, CreatedAt = seedDateTime, UpdatedAt = seedDateTime },
+                new Category { Id = 7, Name = "Travel", ColorHex = "#B0C4DE", IsDefault = true, CreatedAt = seedDateTime, UpdatedAt = seedDateTime },
+                new Category { Id = 8, Name = "Education", ColorHex = "#F0E68C", IsDefault = true, CreatedAt = seedDateTime, UpdatedAt = seedDateTime }
             );
         }
 

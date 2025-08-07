@@ -1,9 +1,49 @@
 ﻿<Window x:Class="TimeWise.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="TimeWise" Height="800" 
-        Width="1500">
+        xmlns:local="clr-namespace:TimeWise.Controls"
+        Title="TimeWise" 
+        MinHeight="600" 
+        MinWidth="1000"
+        Height="800" 
+        Width="1500"
+        WindowState="Maximized"
+        Background="{DynamicResource WindowBackgroundBrush}">
     <Window.Resources>
+        <!-- Simple Icon Resources using Unicode symbols -->
+        <Style x:Key="IconButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextForegroundBrush}"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"
+                                            TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource ButtonHoverBrush}"/>
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource TextForegroundBrush}"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource CalendarTodayBrush}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Modern Delete Button Style -->
         <Style x:Key="CircularDeleteButton" TargetType="Button">
             <Setter Property="Template">
@@ -72,7 +112,7 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-        
+
         <!-- Modern Add Button Style -->
         <Style x:Key="CircularAddButton" TargetType="Button">
             <Setter Property="Template">
@@ -147,7 +187,7 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Enhanced Card Style -->
+        <!-- Enhanced Card Style with theme-aware shadows -->
         <Style x:Key="AppointmentCard" TargetType="Border">
             <Setter Property="CornerRadius" Value="10"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -155,14 +195,16 @@
             <Setter Property="Margin" Value="5"/>
             <Setter Property="Effect">
                 <Setter.Value>
-                    <DropShadowEffect Color="Gray" BlurRadius="6" Opacity="0.3" ShadowDepth="3"/>
+                    <DropShadowEffect Color="{Binding Source={x:Static SystemParameters.HighContrast}, Converter={x:Null}}" 
+                                    BlurRadius="6" Opacity="0.3" ShadowDepth="3"/>
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Effect">
                         <Setter.Value>
-                            <DropShadowEffect Color="Gray" BlurRadius="10" Opacity="0.5" ShadowDepth="5"/>
+                            <DropShadowEffect Color="{Binding Source={x:Static SystemParameters.HighContrast}, Converter={x:Null}}" 
+                                            BlurRadius="10" Opacity="0.5" ShadowDepth="5"/>
                         </Setter.Value>
                     </Setter>
                     <Setter Property="RenderTransform">
@@ -173,110 +215,186 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        <!-- Theme-aware TextBox Style -->
+        <Style x:Key="ThemedTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="{DynamicResource TextBoxBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextForegroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource TextBoxBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="3"/>
+            <Style.Triggers>
+                <Trigger Property="IsFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource TextBoxFocusBorderBrush}"/>
+                    <Setter Property="BorderThickness" Value="2"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
-    
+
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="200"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="250" MinWidth="200" MaxWidth="350"/>
+            <ColumnDefinition Width="5"/>
+            <ColumnDefinition Width="*" MinWidth="500"/>
         </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="60"/>
+            <RowDefinition Height="Auto" MinHeight="60"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <StackPanel x:Name="Header" Grid.Row="0" Orientation="Horizontal" Grid.ColumnSpan="2">
+        <!-- Splitter for resizable sidebar -->
+        <GridSplitter Grid.Column="1" Grid.Row="0" Grid.RowSpan="2"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Background="{DynamicResource BorderBrush}"
+                      ShowsPreview="True"/>
 
-            <Label Content="TimeWise" 
-                   FontSize="45" 
-                   FontWeight="Bold" 
-                   HorizontalAlignment="Center" 
-                   VerticalAlignment="Center"
-                   Margin="200,0,0,0"
-                   />
+        <Grid x:Name="Header" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <Label Grid.Column="0"
+                   Content="TimeWise" 
+                   FontSize="36" 
+                   FontWeight="Bold"
+                   Foreground="{DynamicResource HeaderForegroundBrush}" 
+                   Height="63" 
+                   VerticalContentAlignment="Center"
+                   HorizontalContentAlignment="Left"
+                   Margin="10,0,0,0"/>
 
-            <Button x:Name="Settings" FontSize="20"
-                    Width="100" 
-                    Height="40" 
-                    Margin="800,0,0,0" 
-                    HorizontalAlignment="Center" 
-                    VerticalAlignment="Bottom" Background="{x:Null}" BorderBrush="{x:Null}">
-                <Image Source="/Images/icons/Gear.png"/>
-            </Button>
+            <!-- Buttons aligned to the right -->
+            <StackPanel Grid.Column="1" 
+                       Orientation="Horizontal" 
+                       HorizontalAlignment="Right" 
+                       VerticalAlignment="Center"
+                       Margin="0,0,20,0">
+                <Button x:Name="Settings" 
+                        Width="50" 
+                        Height="40" 
+                        Margin="10,0,0,0" 
+                        HorizontalAlignment="Center" 
+                        VerticalAlignment="Center" 
+                        Style="{StaticResource IconButtonStyle}"
+                        Content="SET"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        ToolTip="Settings"/>
 
-            <Button x:Name="Darkmode"
-                    FontSize="20"
-                    Width="100" 
-                    Height="40" 
-                    Margin="20,0,0,0" 
-                    HorizontalAlignment="Center" 
-                    VerticalAlignment="Bottom" Background="{x:Null}" BorderBrush="{x:Null}">
-                <Image Source="/Images/icons/Dark.png"/>
-            </Button>
+                <Button x:Name="Darkmode"
+                        Width="56" 
+                        Height="41" 
+                        Margin="10,0,0,0" 
+                        HorizontalAlignment="Center" 
+                        VerticalAlignment="Center" 
+                        Style="{StaticResource IconButtonStyle}"
+                        Content="DARK"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Click="Darkmode_Click"
+                        ToolTip="Switch Theme"/>
+            </StackPanel>
+        </Grid>
 
-        </StackPanel>
 
+        <Grid x:Name="SidePanel" Grid.Column="0" Grid.Row="1" Margin="5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <StackPanel x:Name="SidePanel" Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" Orientation="Vertical" Margin="0,0,0,0">
+            <local:SimpleCalendar x:Name="MainCalendar" 
+                      Margin="5" 
+                      Grid.Row="0"
+                      HorizontalAlignment="Stretch"/>
 
-            <Calendar x:Name="MainCalendar" 
-                      Margin="0,20,0,0" 
-                      Grid.Row="1" 
-                      Grid.Column="0"/>
+            <StackPanel Grid.Row="1" Orientation="Vertical" Margin="5">
+                <Border BorderBrush="{DynamicResource BorderBrush}" 
+                        BorderThickness="1" 
+                        Margin="5" 
+                        Background="{DynamicResource PanelBackgroundBrush}"/>
 
-            <Border BorderBrush="Black" 
-                    BorderThickness="1" 
-                    Margin="10,10,10,0" 
-                    Background="#FFF0F0F0" RenderTransformOrigin="0.5,0.5"/>
-
-            <Label Content="Category Filters" 
-                   FontSize="20" 
-                   FontWeight="Bold" 
-                   HorizontalAlignment="Center" 
-                   Margin="0,5,0,0"/>
-
-            <CheckBox Content="Work" Margin="10,5,0,0" Background="LightBlue"/>
-            <CheckBox Content="Personal" Margin="10,5,0,0" Background="LightGreen"/>
-            <CheckBox Content="Health" Margin="10,5,0,0" Background="Yellow"/>
-            <CheckBox Content="Hobbies" Margin="10,5,0,0" Background="Orange"/>
-
-            <TextBox x:Name="SearchBox" 
-                     Margin="10,20,10,0" 
-                     Height="21" 
-                     Text="Search appointments..." Width="178" HorizontalAlignment="Right" HorizontalContentAlignment="Center"/>
-
-            <Border BorderBrush="Black" 
-                    BorderThickness="1" 
-                    Margin="10,10,10,0" 
-                    Background="#FFF0F0F0"/>
-
-            <Label Content="Notes" 
-                   FontSize="20" 
-                   FontWeight="Bold" 
-                   HorizontalAlignment="Center" 
-                   Margin="0,5,0,0"/>
-
-            <TextBox x:Name="NotesBox" 
-                     Margin="10,10,10,0" 
-                     Height="245" 
-                     TextWrapping="Wrap" 
-                     VerticalScrollBarVisibility="Auto" 
-                     AcceptsReturn="True"/>
-
-            <Border BorderBrush="Black" 
-                    BorderThickness="1" 
-                    Margin="10,10,10,0" 
-                    Background="#FFF0F0F0"/>
-
-            <TextBlock Text="Notes will be saved automatically." 
+                <Label Content="Category Filters" 
+                       FontSize="16" 
+                       FontWeight="Bold" 
                        HorizontalAlignment="Center" 
-                       VerticalAlignment="Center"/>
-        </StackPanel>
+                       Margin="0,5,0,5"
+                       Foreground="{DynamicResource TextForegroundBrush}"/>
 
-        <Grid Grid.Row="1" Grid.Column="1" Margin="10,0,0,0">
-            <TabControl x:Name="MainTabControl">
-                <TabItem Header="Day" Height="20" Width="100">
+                <CheckBox Content="Work" Margin="10,3,0,3" 
+                         Style="{DynamicResource DarkCheckBoxStyle}"/>
+                <CheckBox Content="Personal" Margin="10,3,0,3" 
+                         Style="{DynamicResource DarkCheckBoxStyle}"/>
+                <CheckBox Content="Health" Margin="10,3,0,3" 
+                         Style="{DynamicResource DarkCheckBoxStyle}"/>
+                <CheckBox Content="Hobbies" Margin="10,3,0,3" 
+                         Style="{DynamicResource DarkCheckBoxStyle}"/>
+
+                <TextBox x:Name="SearchBox" 
+                         Margin="10,10,10,5" 
+                         Height="25" 
+                         Text="Search appointments..." 
+                         HorizontalAlignment="Stretch"
+                         HorizontalContentAlignment="Center"
+                         Style="{StaticResource ThemedTextBox}"/>
+            </StackPanel>
+
+            <ScrollViewer Grid.Row="2" 
+                         VerticalScrollBarVisibility="Auto" 
+                         HorizontalScrollBarVisibility="Disabled"
+                         Margin="5">
+                <StackPanel>
+                    <Border BorderBrush="{DynamicResource BorderBrush}" 
+                            BorderThickness="1" 
+                            Margin="5" 
+                            Background="{DynamicResource PanelBackgroundBrush}"/>
+
+                    <Label Content="Notes" 
+                           FontSize="16" 
+                           FontWeight="Bold" 
+                           HorizontalAlignment="Center" 
+                           Margin="0,5,0,5"
+                           Foreground="{DynamicResource TextForegroundBrush}"/>
+
+                    <TextBox x:Name="NotesBox" 
+                             Margin="10,5,10,5" 
+                             Height="150"
+                             MinHeight="100"
+                             MaxHeight="300"
+                             TextWrapping="Wrap" 
+                             AcceptsReturn="True"
+                             VerticalScrollBarVisibility="Auto"
+                             Style="{StaticResource ThemedTextBox}"/>
+
+                    <Border BorderBrush="{DynamicResource BorderBrush}" 
+                            BorderThickness="1" 
+                            Margin="10,5,10,0" 
+                            Background="{DynamicResource PanelBackgroundBrush}"/>
+
+                    <TextBlock Text="Notes will be saved automatically." 
+                               HorizontalAlignment="Center" 
+                               Margin="5"
+                               TextWrapping="Wrap"
+                               FontSize="12"
+                               Foreground="{DynamicResource SecondaryTextBrush}"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <Grid Grid.Row="1" Grid.Column="2" Margin="10,0,10,0">
+            <TabControl x:Name="MainTabControl" 
+                       Background="{DynamicResource TabBackgroundBrush}"
+                       Style="{DynamicResource DarkTabControlStyle}">
+                <TabItem Height="30" Width="80" 
+                        Style="{DynamicResource DarkTabItemStyle}">
+                    <TabItem.Header>
+                        <TextBlock Text="Day" Foreground="{DynamicResource TextForegroundBrush}" FontWeight="Bold"/>
+                    </TabItem.Header>
                     <DockPanel>
                         <!-- Add Button first to reserve space at bottom -->
                         <Button DockPanel.Dock="Bottom" Content="+" FontSize="32" FontWeight="Bold" 
@@ -299,17 +417,24 @@
                                 </TransformGroup>
                             </Button.RenderTransform>
                         </Button>
-                        
+
                         <!-- ScrollViewer takes remaining space -->
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                                    HorizontalScrollBarVisibility="Auto"
+                                    CanContentScroll="True"
+                                    Style="{DynamicResource ThemedScrollViewer}">
                             <StackPanel x:Name="appointmentList" Margin="10,10,10,10">
                                 <!-- Daily appointments will be loaded here dynamically -->
                             </StackPanel>
                         </ScrollViewer>
                     </DockPanel>
                 </TabItem>
-                
-                <TabItem Header="Week" Height="20" Width="100" VerticalAlignment="Center">
+
+                <TabItem Height="30" Width="80" VerticalAlignment="Center" 
+                        Style="{DynamicResource DarkTabItemStyle}">
+                    <TabItem.Header>
+                        <TextBlock Text="Week" Foreground="{DynamicResource TextForegroundBrush}" FontWeight="Bold"/>
+                    </TabItem.Header>
                     <DockPanel>
                         <!-- Add Button first to reserve space at bottom -->
                         <Button DockPanel.Dock="Bottom" Content="+" FontSize="32" FontWeight="Bold" 
@@ -332,9 +457,12 @@
                                 </TransformGroup>
                             </Button.RenderTransform>
                         </Button>
-                        
+
                         <!-- ScrollViewer takes remaining space -->
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                                    HorizontalScrollBarVisibility="Auto"
+                                    CanContentScroll="True"
+                                    Style="{DynamicResource ThemedScrollViewer}">
                             <StackPanel x:Name="weekAppointmentList" Margin="10,10,10,10">
                                 <!-- Weekly appointments will be loaded here dynamically -->
                             </StackPanel>
