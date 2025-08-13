@@ -367,19 +367,39 @@
                         <TextBlock Text="Day" Foreground="{DynamicResource TextForegroundBrush}" FontWeight="Bold"/>
                     </TabItem.Header>
                     <DockPanel>
-                        <!-- Category Filter Section -->
-                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10,10,10,5">
-                            <Label Content="Filter by Category:" 
-                                   FontWeight="Bold" 
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource TextForegroundBrush}"/>
-                            <ComboBox Name="categoryFilterComboBox" 
-                                     Width="200" 
-                                     Height="30" 
-                                     Margin="10,0,0,0"
-                                     SelectionChanged="CategoryFilter_SelectionChanged">
-                                <ComboBoxItem Content="All Categories" Tag="0" IsSelected="True"/>
-                            </ComboBox>
+                        <!-- Day Navigation and Filter Section -->
+                        <StackPanel DockPanel.Dock="Top" Margin="10,10,10,5">
+                            <!-- Day Navigation Row -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10" HorizontalAlignment="Center">
+                                <Button Name="PreviousDayButton" Content="‹ Previous Day" 
+                                        Style="{StaticResource IconButtonStyle}"
+                                        Margin="0,0,20,0" Padding="10,5"
+                                        Click="PreviousDayButton_Click"/>
+                                <TextBlock Name="DayDisplayText" 
+                                           Text="August 13, 2025"
+                                           FontWeight="Bold" FontSize="16"
+                                           VerticalAlignment="Center" Margin="20,0"
+                                           Foreground="{DynamicResource TextForegroundBrush}"/>
+                                <Button Name="NextDayButton" Content="Next Day ›" 
+                                        Style="{StaticResource IconButtonStyle}"
+                                        Margin="20,0,0,0" Padding="10,5"
+                                        Click="NextDayButton_Click"/>
+                            </StackPanel>
+                            
+                            <!-- Category Filter Row -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Label Content="Filter by Category:" 
+                                       FontWeight="Bold" 
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextForegroundBrush}"/>
+                                <ComboBox Name="categoryFilterComboBox" 
+                                         Width="200" 
+                                         Height="30" 
+                                         Margin="10,0,0,0"
+                                         SelectionChanged="CategoryFilter_SelectionChanged">
+                                    <ComboBoxItem Content="All Categories" Tag="0" IsSelected="True"/>
+                                </ComboBox>
+                            </StackPanel>
                         </StackPanel>
                         
                         <!-- Add Button first to reserve space at bottom -->
@@ -422,19 +442,39 @@
                         <TextBlock Text="Week" Foreground="{DynamicResource TextForegroundBrush}" FontWeight="Bold"/>
                     </TabItem.Header>
                     <DockPanel>
-                        <!-- Category Filter Section -->
-                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10,10,10,5">
-                            <Label Content="Filter by Category:" 
-                                   FontWeight="Bold" 
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource TextForegroundBrush}"/>
-                            <ComboBox Name="categoryFilterComboBoxWeek" 
-                                     Width="200" 
-                                     Height="30" 
-                                     Margin="10,0,0,0"
-                                     SelectionChanged="CategoryFilterWeek_SelectionChanged">
-                                <ComboBoxItem Content="All Categories" Tag="0" IsSelected="True"/>
-                            </ComboBox>
+                        <!-- Week Navigation and Filter Section -->
+                        <StackPanel DockPanel.Dock="Top" Margin="10,10,10,5">
+                            <!-- Week Navigation Row -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10" HorizontalAlignment="Center">
+                                <Button Name="PreviousWeekButton" Content="‹ Previous Week" 
+                                        Style="{StaticResource IconButtonStyle}"
+                                        Margin="0,0,20,0" Padding="10,5"
+                                        Click="PreviousWeekButton_Click"/>
+                                <TextBlock Name="WeekDisplayText" 
+                                           Text="Week of Aug 13 - Aug 19, 2025"
+                                           FontWeight="Bold" FontSize="16"
+                                           VerticalAlignment="Center" Margin="20,0"
+                                           Foreground="{DynamicResource TextForegroundBrush}"/>
+                                <Button Name="NextWeekButton" Content="Next Week ›" 
+                                        Style="{StaticResource IconButtonStyle}"
+                                        Margin="20,0,0,0" Padding="10,5"
+                                        Click="NextWeekButton_Click"/>
+                            </StackPanel>
+                            
+                            <!-- Category Filter Row -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Label Content="Filter by Category:" 
+                                       FontWeight="Bold" 
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextForegroundBrush}"/>
+                                <ComboBox Name="categoryFilterComboBoxWeek" 
+                                         Width="200" 
+                                         Height="30" 
+                                         Margin="10,0,0,0"
+                                         SelectionChanged="CategoryFilterWeek_SelectionChanged">
+                                    <ComboBoxItem Content="All Categories" Tag="0" IsSelected="True"/>
+                                </ComboBox>
+                            </StackPanel>
                         </StackPanel>
                         
                         <!-- Add Button first to reserve space at bottom -->

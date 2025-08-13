@@ -286,7 +286,41 @@ namespace TimeWise
                 
                 _selectedDate = selectedDate;
                 FileLogger.Log($"Calendar date selected: {_selectedDate:yyyy-MM-dd}");
-                await LoadAppointmentsAsync();
+                
+                // 无论在哪个标签页，都要加载新日期的Notes
+                await LoadNotesToLeftPanel();
+                
+                // 检查当前是哪个标签页，然后相应地更新视图
+                var tabControl = FindName("MainTabControl") as TabControl;
+                if (tabControl?.SelectedItem is TabItem selectedTab)
+                {
+                    string tabHeader = "";
+                    if (selectedTab.Header is TextBlock textBlock)
+                    {
+                        tabHeader = textBlock.Text ?? "";
+                    }
+                    
+                    FileLogger.Log($"Current tab when calendar date selected: {tabHeader}");
+                    
+                    if (tabHeader == "Week")
+                    {
+                        // 如果当前在Week视图，更新Week视图
+                        FileLogger.Log("Updating Week view after calendar selection");
+                        await LoadWeeklyAppointmentsAsync();
+                    }
+                    else
+                    {
+                        // 否则更新Day视图
+                        FileLogger.Log("Updating Day view after calendar selection");
+                        await LoadAppointmentsAsync();
+                    }
+                }
+                else
+                {
+                    // 默认更新Day视图
+                    FileLogger.Log("No tab selected, updating Day view by default");
+                    await LoadAppointmentsAsync();
+                }
             }
             catch (Exception ex)
             {
@@ -306,7 +340,33 @@ namespace TimeWise
                     
                     _selectedDate = calendar.SelectedDate.Value;
                     FileLogger.Log($"Calendar date selected: {_selectedDate:yyyy-MM-dd}");
-                    await LoadAppointmentsAsync();
+                    
+                    // 检查当前是哪个标签页，然后相应地更新视图
+                    var tabControl = FindName("MainTabControl") as TabControl;
+                    if (tabControl?.SelectedItem is TabItem selectedTab)
+                    {
+                        string tabHeader = "";
+                        if (selectedTab.Header is TextBlock textBlock)
+                        {
+                            tabHeader = textBlock.Text ?? "";
+                        }
+                        
+                        if (tabHeader == "Week")
+                        {
+                            // 如果当前在Week视图，更新Week视图
+                            await LoadWeeklyAppointmentsAsync();
+                        }
+                        else
+                        {
+                            // 否则更新Day视图
+                            await LoadAppointmentsAsync();
+                        }
+                    }
+                    else
+                    {
+                        // 默认更新Day视图
+                        await LoadAppointmentsAsync();
+                    }
                 }
             }
             catch (Exception ex)
@@ -500,10 +560,78 @@ namespace TimeWise
                     title += " (Today)";
                 }
                 this.Title = title;
+                
+                // 更新Day视图中的日期显示文本
+                if (DayDisplayText != null)
+                {
+                    DayDisplayText.Text = _selectedDate.ToString("MMMM dd, yyyy");
+                }
             }
             catch (Exception ex)
             {
                 FileLogger.LogException("UpdateDateDisplay", ex);
+            }
+        }
+
+        private async void PreviousDayButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                FileLogger.Log("PreviousDayButton_Click called");
+                
+                // 在切换日期之前，先保存当前日期的Notes内容
+                await SaveNotesFromLeftPanel();
+                
+                // 将选中日期向前移动1天
+                _selectedDate = _selectedDate.AddDays(-1);
+                
+                // 更新日历显示
+                if (MainCalendar != null)
+                {
+                    MainCalendar.SelectedDate = _selectedDate;
+                }
+                
+                // 加载新日期的Notes
+                await LoadNotesToLeftPanel();
+                
+                // 重新加载日视图
+                await LoadAppointmentsAsync();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("PreviousDayButton_Click", ex);
+                MessageBox.Show($"Error navigating to previous day: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void NextDayButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                FileLogger.Log("NextDayButton_Click called");
+                
+                // 在切换日期之前，先保存当前日期的Notes内容
+                await SaveNotesFromLeftPanel();
+                
+                // 将选中日期向后移动1天
+                _selectedDate = _selectedDate.AddDays(1);
+                
+                // 更新日历显示
+                if (MainCalendar != null)
+                {
+                    MainCalendar.SelectedDate = _selectedDate;
+                }
+                
+                // 加载新日期的Notes
+                await LoadNotesToLeftPanel();
+                
+                // 重新加载日视图
+                await LoadAppointmentsAsync();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("NextDayButton_Click", ex);
+                MessageBox.Show($"Error navigating to next day: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1353,10 +1481,78 @@ namespace TimeWise
             {
                 var title = $"TimeWise - Week of {startOfWeek:yyyy-MM-dd} to {endOfWeek:yyyy-MM-dd}";
                 this.Title = title;
+                
+                // 更新Week视图中的周显示文本
+                if (WeekDisplayText != null)
+                {
+                    WeekDisplayText.Text = $"Week of {startOfWeek:MMM dd} - {endOfWeek:MMM dd}, {startOfWeek:yyyy}";
+                }
             }
             catch (Exception ex)
             {
                 FileLogger.LogException("UpdateWeeklyDateDisplay", ex);
+            }
+        }
+
+        private async void PreviousWeekButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                FileLogger.Log("PreviousWeekButton_Click called");
+                
+                // 在切换日期之前，先保存当前日期的Notes内容
+                await SaveNotesFromLeftPanel();
+                
+                // 将选中日期向前移动7天到上一周
+                _selectedDate = _selectedDate.AddDays(-7);
+                
+                // 更新日历显示（如果用户切换回Day视图时能看到正确的选中日期）
+                if (MainCalendar != null)
+                {
+                    MainCalendar.SelectedDate = _selectedDate;
+                }
+                
+                // 加载新日期的Notes
+                await LoadNotesToLeftPanel();
+                
+                // 重新加载周视图
+                await LoadWeeklyAppointmentsAsync();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("PreviousWeekButton_Click", ex);
+                MessageBox.Show($"Error navigating to previous week: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void NextWeekButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                FileLogger.Log("NextWeekButton_Click called");
+                
+                // 在切换日期之前，先保存当前日期的Notes内容
+                await SaveNotesFromLeftPanel();
+                
+                // 将选中日期向后移动7天到下一周
+                _selectedDate = _selectedDate.AddDays(7);
+                
+                // 更新日历显示（如果用户切换回Day视图时能看到正确的选中日期）
+                if (MainCalendar != null)
+                {
+                    MainCalendar.SelectedDate = _selectedDate;
+                }
+                
+                // 加载新日期的Notes
+                await LoadNotesToLeftPanel();
+                
+                // 重新加载周视图
+                await LoadWeeklyAppointmentsAsync();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("NextWeekButton_Click", ex);
+                MessageBox.Show($"Error navigating to next week: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
