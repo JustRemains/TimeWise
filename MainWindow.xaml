@@ -369,8 +369,10 @@
                     <DockPanel>
                         <!-- Day Navigation and Filter Section -->
                         <StackPanel DockPanel.Dock="Top" Margin="10,10,10,5">
+                            
                             <!-- Day Navigation Row -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10" HorizontalAlignment="Center">
+                                
                                 <Button Name="PreviousDayButton" Content="‹ Previous Day" 
                                         Style="{StaticResource IconButtonStyle}"
                                         Margin="0,0,20,0" Padding="10,5"
@@ -386,6 +388,17 @@
                                         Click="NextDayButton_Click"/>
                             </StackPanel>
                             
+                            <StackPanel Orientation="Horizontal" Margin="0,-6,0,0">
+                                <TextBox x:Name="appointmentSearchBoxDay" 
+                                        Width="325" 
+                                        Height="30" 
+                                        Margin="-1,0,0,0"
+                                        HorizontalAlignment="Left"
+                                        Style="{StaticResource ThemedTextBox}"
+                                        TextChanged="SearchBox_TextChanged"/>
+                                        
+                            </StackPanel>
+
                             <!-- Category Filter Row -->
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                                 <Label Content="Filter by Category:" 
@@ -460,6 +473,18 @@
                                         Margin="20,0,0,0" Padding="10,5"
                                         Click="NextWeekButton_Click"/>
                             </StackPanel>
+                            
+                            <StackPanel>
+                                <TextBox
+                                        x:Name="appointmentSearchBoxWeek" 
+                                        Width="325" 
+                                        Height="30" 
+                                        Margin="-1,0,0,0"
+                                        HorizontalAlignment="Left"
+                                        Style="{StaticResource ThemedTextBox}"
+                                        TextChanged="SearchBox_TextChanged"/>
+                            </StackPanel>
+
                             
                             <!-- Category Filter Row -->
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">

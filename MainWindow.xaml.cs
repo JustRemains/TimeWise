@@ -1789,6 +1789,58 @@ namespace TimeWise
             }
         }
 
+        private string _searchQuery = string.Empty;
+
+        private async void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is TextBox textBox)
+            {
+                _searchQuery = textBox.Text.Trim().ToLower();
+
+                if (string.IsNullOrWhiteSpace(_searchQuery))
+                {
+                    // If search is empty, just reload normally
+                    await LoadAppointmentsAsync();
+                    return;
+                }
+
+                // Search across all appointments
+                var allAppointments = await _appointmentService.GetAllAppointmentsAsync();
+                var matches = allAppointments
+                    .Where(a => a.Title.ToLower().Contains(_searchQuery))
+                    .OrderBy(a => a.Date)
+                    .ToList();
+
+                if (matches.Any())
+                {
+                    var firstMatch = matches.First();
+                    _selectedDate = firstMatch.Date;
+
+                    // Move calendar to that day
+                    if (MainCalendar != null)
+                        MainCalendar.SelectedDate = _selectedDate;
+
+                    // Load appointments for that day
+                    await LoadAppointmentsAsync();
+                }
+                else
+                {
+                    // No matches, clear the list and show message
+                    appointmentList.Children.Clear();
+                    appointmentList.Children.Add(new TextBlock
+                    {
+                        Text = "No appointments found",
+                        FontSize = 16,
+                        FontStyle = FontStyles.Italic,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        Margin = new Thickness(0, 20, 0, 0)
+                    });
+                }
+            }
+        }
+
+
+
         #region Notes Functionality
 
         private bool _isLoadingNotes = false;  // 防止在加载时触发TextChanged事件
