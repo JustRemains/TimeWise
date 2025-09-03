@@ -9,10 +9,13 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Media.Effects;
+using System.Windows.Controls.Primitives;
+using Microsoft.Win32;
 using TimeWise.Models;
 using TimeWise.Services;
 using TimeWise.Utilities;
 using System.IO;
+using System.Globalization;
 
 namespace TimeWise
 {
@@ -24,11 +27,12 @@ namespace TimeWise
         private readonly IAppointmentService _appointmentService;
         private readonly ICategoryService _categoryService;
         private readonly INoteService _noteService;
+        private readonly INotificationService _notificationService;
         private DateTime _selectedDate;
         private bool _isDarkMode = false;
         private int _selectedCategoryFilter = 0; // 0表示显示所有categories
 
-        public MainWindow(IAppointmentService appointmentService, ICategoryService categoryService, INoteService noteService)
+        public MainWindow(IAppointmentService appointmentService, ICategoryService categoryService, INoteService noteService, INotificationService notificationService)
         {
             FileLogger.Log("MainWindow constructor called");
             try
@@ -42,6 +46,7 @@ namespace TimeWise
                 _appointmentService = appointmentService;
                 _categoryService = categoryService;
                 _noteService = noteService;
+                _notificationService = notificationService;
                 _selectedDate = DateTime.Today;
                 
                 Loaded += MainWindow_Loaded;
@@ -122,6 +127,177 @@ namespace TimeWise
                 FileLogger.LogException("Darkmode_Click", ex);
                 MessageBox.Show($"Error switching theme: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void Settings_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var settingsPopup = FindName("SettingsPopup") as Popup;
+                if (settingsPopup != null)
+                {
+                    settingsPopup.IsOpen = !settingsPopup.IsOpen;
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("Settings_Click", ex);
+            }
+        }
+
+        private void LightMode_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _isDarkMode = false;
+                ApplyTheme(_isDarkMode);
+                UpdateThemeButtonAppearance();
+                SaveThemePreference();
+                FileLogger.Log("Theme switched to Light mode via settings");
+                
+                // Close the popup
+                var settingsPopup = FindName("SettingsPopup") as Popup;
+                if (settingsPopup != null)
+                {
+                    settingsPopup.IsOpen = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("LightMode_Click", ex);
+                MessageBox.Show($"Error switching to light mode: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void DarkMode_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _isDarkMode = true;
+                ApplyTheme(_isDarkMode);
+                UpdateThemeButtonAppearance();
+                SaveThemePreference();
+                FileLogger.Log("Theme switched to Dark mode via settings");
+                
+                // Close the popup
+                var settingsPopup = FindName("SettingsPopup") as Popup;
+                if (settingsPopup != null)
+                {
+                    settingsPopup.IsOpen = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("DarkMode_Click", ex);
+                MessageBox.Show($"Error switching to dark mode: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void TestNotification_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                FileLogger.Log("Opening notification test window");
+                
+                var testWindow = new NotificationTestWindow(_appointmentService, _categoryService, _notificationService);
+                testWindow.Owner = this;
+                testWindow.Show();
+                
+                // Close the popup
+                var settingsPopup = FindName("SettingsPopup") as Popup;
+                if (settingsPopup != null)
+                {
+                    settingsPopup.IsOpen = false;
+                }
+                
+                FileLogger.Log("Notification test window opened successfully");
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("TestNotification_Click", ex);
+                MessageBox.Show($"Error opening notification test window: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void ExportCsv_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Show file save dialog
+                SaveFileDialog saveFileDialog = new SaveFileDialog
+                {
+                    Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+                    DefaultExt = "csv",
+                    FileName = $"TimeWise_Appointments_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+                };
+
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    // Get all appointments
+                    var allAppointments = await _appointmentService.GetAllAppointmentsAsync();
+                    var allCategories = await _categoryService.GetAllCategoriesAsync();
+                    
+                    // Create CSV content
+                    var csvContent = new StringBuilder();
+                    
+                    // CSV Header
+                    csvContent.AppendLine("Date,Time,Title,Description,Primary Category,Additional Categories,Duration");
+                    
+                    // CSV Data
+                    foreach (var appointment in allAppointments.OrderBy(a => a.Date).ThenBy(a => a.StartTime))
+                    {
+                        var primaryCategory = allCategories.FirstOrDefault(c => c.Id == appointment.CategoryId)?.Name ?? "None";
+                        
+                        // Get additional categories
+                        var additionalCategories = appointment.AppointmentCategories?
+                            .Where(ac => ac.CategoryId != appointment.CategoryId)
+                            .Select(ac => allCategories.FirstOrDefault(c => c.Id == ac.CategoryId)?.Name)
+                            .Where(name => !string.IsNullOrEmpty(name))
+                            .Cast<string>()
+                            .ToList() ?? new List<string>();
+                        
+                        var additionalCategoriesString = string.Join("; ", additionalCategories);
+                        
+                        // Calculate duration
+                        var duration = (appointment.EndTime - appointment.StartTime).TotalMinutes;
+                        
+                        // Escape quotes and commas in text fields
+                        var title = EscapeCsvField(appointment.Title);
+                        var description = EscapeCsvField(appointment.Description ?? "");
+                        var primaryCategoryEscaped = EscapeCsvField(primaryCategory);
+                        var additionalCategoriesEscaped = EscapeCsvField(additionalCategoriesString);
+                        
+                        csvContent.AppendLine($"{appointment.Date:yyyy-MM-dd},{appointment.StartTime:hh\\:mm},{title},{description},{primaryCategoryEscaped},{additionalCategoriesEscaped},{duration} minutes");
+                    }
+                    
+                    // Write to file
+                    await File.WriteAllTextAsync(saveFileDialog.FileName, csvContent.ToString(), Encoding.UTF8);
+                    
+                    MessageBox.Show($"Appointments successfully exported to:\n{saveFileDialog.FileName}", 
+                                  "Export Successful", MessageBoxButton.OK, MessageBoxImage.Information);
+                    
+                    FileLogger.Log($"CSV export completed: {saveFileDialog.FileName}");
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("ExportCsv_Click", ex);
+                MessageBox.Show($"Error exporting to CSV: {ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private string EscapeCsvField(string field)
+        {
+            if (string.IsNullOrEmpty(field))
+                return "";
+            
+            // If field contains comma, quote, or newline, wrap in quotes and escape internal quotes
+            if (field.Contains(',') || field.Contains('"') || field.Contains('\n') || field.Contains('\r'))
+            {
+                return '"' + field.Replace("\"", "\"\"") + '"';
+            }
+            
+            return field;
         }
 
         private void UpdateThemeButtonAppearance()
@@ -281,14 +457,8 @@ namespace TimeWise
         {
             try
             {
-                // 在切换日期之前，先保存当前日期的Notes内容
-                await SaveNotesFromLeftPanel();
-                
                 _selectedDate = selectedDate;
                 FileLogger.Log($"Calendar date selected: {_selectedDate:yyyy-MM-dd}");
-                
-                // 无论在哪个标签页，都要加载新日期的Notes
-                await LoadNotesToLeftPanel();
                 
                 // 检查当前是哪个标签页，然后相应地更新视图
                 var tabControl = FindName("MainTabControl") as TabControl;
@@ -332,12 +502,9 @@ namespace TimeWise
         {
             try
             {
-                var calendar = sender as Calendar;
+                var calendar = sender as System.Windows.Controls.Calendar;
                 if (calendar?.SelectedDate.HasValue == true)
                 {
-                    // 在切换日期之前，先保存当前日期的Notes内容
-                    await SaveNotesFromLeftPanel();
-                    
                     _selectedDate = calendar.SelectedDate.Value;
                     FileLogger.Log($"Calendar date selected: {_selectedDate:yyyy-MM-dd}");
                     
@@ -386,13 +553,52 @@ namespace TimeWise
                 // Load category filters
                 await LoadCategoryFilters();
                 
+                // Load notes first, independently
+                await LoadNotesToLeftPanel();
+                
                 await LoadAppointmentsAsync();
+                
+                // Add event handler to close popup when clicking elsewhere
+                this.MouseDown += MainWindow_MouseDown;
+                
+                // Start notification monitoring
+                _notificationService.StartNotificationMonitoring();
+                FileLogger.Log("Notification monitoring started");
+                
                 FileLogger.Log("MainWindow loaded successfully");
             }
             catch (Exception ex)
             {
                 FileLogger.LogException("MainWindow_Loaded", ex);
                 MessageBox.Show($"Error loading main window: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void MainWindow_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            try
+            {
+                var settingsPopup = FindName("SettingsPopup") as Popup;
+                if (settingsPopup != null && settingsPopup.IsOpen)
+                {
+                    // Check if click is outside the popup
+                    var settingsButton = FindName("SettingsButton") as Button;
+                    if (settingsButton != null)
+                    {
+                        var position = e.GetPosition(this);
+                        var buttonBounds = new Rect(settingsButton.TranslatePoint(new Point(0, 0), this), 
+                                                   new Size(settingsButton.ActualWidth, settingsButton.ActualHeight));
+                        
+                        if (!buttonBounds.Contains(position))
+                        {
+                            settingsPopup.IsOpen = false;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.LogException("MainWindow_MouseDown", ex);
             }
         }
 
@@ -404,6 +610,10 @@ namespace TimeWise
                 // 在窗口关闭之前保存当前Notes内容
                 await SaveNotesFromLeftPanel();
                 FileLogger.Log("Notes saved successfully during window closing");
+                
+                // Stop notification monitoring
+                _notificationService.StopNotificationMonitoring();
+                FileLogger.Log("Notification monitoring stopped");
             }
             catch (Exception ex)
             {
@@ -537,9 +747,6 @@ namespace TimeWise
                 // 更新标题显示当前日期
                 UpdateDateDisplay();
                 
-                // 加载当前日期的笔记到左侧Notes组件
-                await LoadNotesToLeftPanel();
-                
                 FileLogger.Log("LoadAppointmentsAsync completed successfully");
             }
             catch (Exception ex)
@@ -579,9 +786,6 @@ namespace TimeWise
             {
                 FileLogger.Log("PreviousDayButton_Click called");
                 
-                // 在切换日期之前，先保存当前日期的Notes内容
-                await SaveNotesFromLeftPanel();
-                
                 // 将选中日期向前移动1天
                 _selectedDate = _selectedDate.AddDays(-1);
                 
@@ -590,9 +794,6 @@ namespace TimeWise
                 {
                     MainCalendar.SelectedDate = _selectedDate;
                 }
-                
-                // 加载新日期的Notes
-                await LoadNotesToLeftPanel();
                 
                 // 重新加载日视图
                 await LoadAppointmentsAsync();
@@ -610,9 +811,6 @@ namespace TimeWise
             {
                 FileLogger.Log("NextDayButton_Click called");
                 
-                // 在切换日期之前，先保存当前日期的Notes内容
-                await SaveNotesFromLeftPanel();
-                
                 // 将选中日期向后移动1天
                 _selectedDate = _selectedDate.AddDays(1);
                 
@@ -621,9 +819,6 @@ namespace TimeWise
                 {
                     MainCalendar.SelectedDate = _selectedDate;
                 }
-                
-                // 加载新日期的Notes
-                await LoadNotesToLeftPanel();
                 
                 // 重新加载日视图
                 await LoadAppointmentsAsync();
@@ -1032,9 +1227,6 @@ namespace TimeWise
             {
                 if (sender is TabControl tabControl && tabControl.SelectedItem is TabItem selectedTab)
                 {
-                    // 在切换标签页之前，先保存当前日期的Notes内容
-                    await SaveNotesFromLeftPanel();
-                    
                     string tabHeader = "";
                     
                     // Handle TextBlock header
@@ -1501,8 +1693,6 @@ namespace TimeWise
                 FileLogger.Log("PreviousWeekButton_Click called");
                 
                 // 在切换日期之前，先保存当前日期的Notes内容
-                await SaveNotesFromLeftPanel();
-                
                 // 将选中日期向前移动7天到上一周
                 _selectedDate = _selectedDate.AddDays(-7);
                 
@@ -1511,9 +1701,6 @@ namespace TimeWise
                 {
                     MainCalendar.SelectedDate = _selectedDate;
                 }
-                
-                // 加载新日期的Notes
-                await LoadNotesToLeftPanel();
                 
                 // 重新加载周视图
                 await LoadWeeklyAppointmentsAsync();
@@ -1531,9 +1718,6 @@ namespace TimeWise
             {
                 FileLogger.Log("NextWeekButton_Click called");
                 
-                // 在切换日期之前，先保存当前日期的Notes内容
-                await SaveNotesFromLeftPanel();
-                
                 // 将选中日期向后移动7天到下一周
                 _selectedDate = _selectedDate.AddDays(7);
                 
@@ -1542,9 +1726,6 @@ namespace TimeWise
                 {
                     MainCalendar.SelectedDate = _selectedDate;
                 }
-                
-                // 加载新日期的Notes
-                await LoadNotesToLeftPanel();
                 
                 // 重新加载周视图
                 await LoadWeeklyAppointmentsAsync();
@@ -1847,7 +2028,7 @@ namespace TimeWise
         private string _lastLoadedNotesContent = "";  // 记录最后加载的内容，用于检测真实变化
 
         /// <summary>
-        /// 加载当前日期的笔记到左侧Notes面板
+        /// 加载所有笔记到左侧Notes面板
         /// </summary>
         private async Task LoadNotesToLeftPanel()
         {
@@ -1855,9 +2036,9 @@ namespace TimeWise
             {
                 _isLoadingNotes = true; // 设置标志，防止触发TextChanged
                 
-                var notes = await _noteService.GetNotesByDateAsync(_selectedDate);
+                var notes = await _noteService.GetAllNotesAsync();
                 
-                // 合并所有笔记到一个字符串，简单用换行分隔
+                // 合并所有笔记到一个字符串，按时间排序，用换行分隔
                 var combinedNotes = string.Join("\n", notes.Select(n => n.Content));
                 
                 // 记录当前加载的内容
@@ -1876,7 +2057,7 @@ namespace TimeWise
                     NotesBox.TextChanged += NotesBox_TextChanged;
                 }
                 
-                FileLogger.Log($"Loaded notes content for {_selectedDate:yyyy-MM-dd}");
+                FileLogger.Log($"Loaded {notes.Count()} notes to left panel");
             }
             catch (Exception ex)
             {
@@ -1940,28 +2121,23 @@ namespace TimeWise
                     return;
                 }
 
-                // 获取当前日期已有的笔记并删除所有
-                var existingNotes = await _noteService.GetNotesByDateAsync(_selectedDate);
-                foreach (var note in existingNotes)
-                {
-                    await _noteService.DeleteNoteAsync(note.Id);
-                }
+                // 清除所有现有笔记
+                await _noteService.ClearAllNotesAsync();
                 
                 // 如果有新内容，保存为单个笔记
                 if (!string.IsNullOrWhiteSpace(currentContent))
                 {
                     var note = new Note
                     {
-                        Content = currentContent,
-                        Date = _selectedDate
+                        Content = currentContent
                     };
 
                     await _noteService.AddNoteAsync(note);
-                    FileLogger.Log($"Saved notes for {_selectedDate:yyyy-MM-dd}");
+                    FileLogger.Log($"Saved notes with {currentContent.Length} characters");
                 }
                 else
                 {
-                    FileLogger.Log($"Cleared notes for {_selectedDate:yyyy-MM-dd}");
+                    FileLogger.Log("Cleared all notes");
                 }
 
                 // 更新最后加载的内容
@@ -1970,6 +2146,7 @@ namespace TimeWise
             catch (Exception ex)
             {
                 FileLogger.LogException("SaveNotesFromLeftPanel", ex);
+                MessageBox.Show($"Error saving notes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

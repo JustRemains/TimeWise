@@ -1,0 +1,152 @@
+<Window x:Class="TimeWise.NotificationTestWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Notification Function Test"
+        Height="450"
+        Width="550"
+        WindowStartupLocation="CenterScreen">
+    
+    <Grid Margin="25">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <TextBlock Grid.Row="0" 
+                   Text="Notification System Test"
+                   FontSize="26"
+                   FontWeight="Bold"
+                   HorizontalAlignment="Center"
+                   Foreground="#2c3e50"
+                   Margin="0,0,0,25"/>
+        
+        <TextBlock Grid.Row="1"
+                   Text="Use the buttons below to test the notification functionality"
+                   FontSize="14"
+                   Foreground="#7f8c8d"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,20"/>
+        
+        <Button Grid.Row="2"
+                x:Name="CreateTestAppointmentButton"
+                Content="Create Test Appointment (14 minutes from now)"
+                Height="45"
+                Margin="0,0,0,12"
+                Background="#3498db"
+                Foreground="White"
+                FontSize="14"
+                FontWeight="SemiBold"
+                BorderThickness="0"
+                Cursor="Hand"
+                Click="CreateTestAppointment_Click">
+            <Button.Style>
+                <Style TargetType="Button">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                        CornerRadius="6">
+                                    <ContentPresenter HorizontalAlignment="Center" 
+                                                    VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#2980b9"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Button.Style>
+        </Button>
+        
+        <Button Grid.Row="3"
+                x:Name="ShowTestNotificationButton"
+                Content="Show Test Notification (Immediate)"
+                Height="45"
+                Margin="0,0,0,12"
+                Background="#e67e22"
+                Foreground="White"
+                FontSize="14"
+                FontWeight="SemiBold"
+                BorderThickness="0"
+                Cursor="Hand"
+                Click="ShowTestNotification_Click">
+            <Button.Style>
+                <Style TargetType="Button">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                        CornerRadius="6">
+                                    <ContentPresenter HorizontalAlignment="Center" 
+                                                    VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#d35400"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Button.Style>
+        </Button>
+        
+        <Button Grid.Row="4"
+                x:Name="CheckMonitoringButton"
+                Content="Check Monitoring Status"
+                Height="45"
+                Margin="0,0,0,25"
+                Background="#27ae60"
+                Foreground="White"
+                FontSize="14"
+                FontWeight="SemiBold"
+                BorderThickness="0"
+                Cursor="Hand"
+                Click="CheckMonitoring_Click">
+            <Button.Style>
+                <Style TargetType="Button">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                        CornerRadius="6">
+                                    <ContentPresenter HorizontalAlignment="Center" 
+                                                    VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#229954"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Button.Style>
+        </Button>
+        
+        <Border Grid.Row="5"
+                Background="#f8f9fa"
+                BorderBrush="#e9ecef"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="15">
+            <ScrollViewer>
+                <TextBlock x:Name="TestResultText"
+                           Text="Click the buttons above to test notification functionality"
+                           FontSize="13"
+                           TextWrapping="Wrap"
+                           Foreground="#495057"
+                           LineHeight="20"/>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</Window>

@@ -81,17 +81,17 @@ namespace TimeWise.Data
                 // ?????? Date + StartTime ????????SQLite?TimeSpan????
             });
 
-            // ??Note??
+            // ??Note?? - 随时记入的笔记，不与日期绑定
             modelBuilder.Entity<Note>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Content).IsRequired().HasMaxLength(2000);
-                entity.Property(e => e.Date).IsRequired();
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("datetime('now')");
                 
-                // ????
-                entity.HasIndex(e => e.Date);
+                // 添加索引用于排序
+                entity.HasIndex(e => e.CreatedAt);
+                entity.HasIndex(e => e.UpdatedAt);
             });
 
             // ??AppointmentCategory??（多对多关系）

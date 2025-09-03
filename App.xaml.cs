@@ -48,6 +48,7 @@ namespace TimeWise
                         services.AddScoped<IAppointmentService, AppointmentService>();
                         services.AddScoped<ICategoryService, CategoryService>();
                         services.AddScoped<INoteService, NoteService>();
+                        services.AddSingleton<INotificationService, NotificationService>();
                         services.AddScoped<DatabaseInitializationService>();
 
                         // 注册窗口

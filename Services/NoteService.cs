@@ -16,11 +16,11 @@ namespace TimeWise.Services
             _context = context;
         }
 
-        public async Task<IEnumerable<Note>> GetNotesByDateAsync(DateTime date)
+        public async Task<IEnumerable<Note>> GetAllNotesAsync()
         {
             return await _context.Notes
-                .Where(n => n.Date.Date == date.Date)
-                .OrderBy(n => n.CreatedAt)
+                .OrderByDescending(n => n.UpdatedAt)
+                .ThenByDescending(n => n.CreatedAt)
                 .ToListAsync();
         }
 
@@ -56,6 +56,13 @@ namespace TimeWise.Services
         public async Task<Note?> GetNoteByIdAsync(int noteId)
         {
             return await _context.Notes.FindAsync(noteId);
+        }
+
+        public async Task ClearAllNotesAsync()
+        {
+            var allNotes = await _context.Notes.ToListAsync();
+            _context.Notes.RemoveRange(allNotes);
+            await _context.SaveChangesAsync();
         }
     }
 }

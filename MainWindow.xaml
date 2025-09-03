@@ -273,30 +273,80 @@
                        HorizontalAlignment="Right" 
                        VerticalAlignment="Center"
                        Margin="0,0,20,0">
-                <Button x:Name="Settings" 
-                        Width="50" 
+                
+                <!-- CSV Export Button -->
+                <Button x:Name="ExportCsvButton" 
+                        Width="60" 
                         Height="40" 
                         Margin="10,0,0,0" 
                         HorizontalAlignment="Center" 
                         VerticalAlignment="Center" 
                         Style="{StaticResource IconButtonStyle}"
-                        Content="SET"
-                        FontSize="16"
-                        FontWeight="Bold"
-                        ToolTip="Settings"/>
+                        Content="📊"
+                        FontSize="20"
+                        Click="ExportCsv_Click"
+                        ToolTip="Export to CSV"/>
 
-                <Button x:Name="Darkmode"
-                        Width="56" 
-                        Height="41" 
-                        Margin="10,0,0,0" 
-                        HorizontalAlignment="Center" 
-                        VerticalAlignment="Center" 
-                        Style="{StaticResource IconButtonStyle}"
-                        Content="DARK"
-                        FontSize="16"
-                        FontWeight="Bold"
-                        Click="Darkmode_Click"
-                        ToolTip="Switch Theme"/>
+                <!-- Settings Button with Dropdown -->
+                <Grid Margin="10,0,0,0">
+                    <Button x:Name="SettingsButton" 
+                            Width="60" 
+                            Height="40" 
+                            HorizontalAlignment="Center" 
+                            VerticalAlignment="Center" 
+                            Style="{StaticResource IconButtonStyle}"
+                            Content="⚙️"
+                            FontSize="20"
+                            Click="Settings_Click"
+                            ToolTip="Settings"/>
+                    
+                    <!-- Settings Dropdown Popup -->
+                    <Popup x:Name="SettingsPopup" 
+                           PlacementTarget="{Binding ElementName=SettingsButton}"
+                           Placement="Bottom"
+                           AllowsTransparency="True"
+                           PopupAnimation="Fade">
+                        <Border Background="{DynamicResource WindowBackgroundBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="5"
+                                Padding="5">
+                            <Border.Effect>
+                                <DropShadowEffect Color="Black" BlurRadius="10" Opacity="0.3" ShadowDepth="2"/>
+                            </Border.Effect>
+                            <StackPanel Orientation="Vertical" MinWidth="150">
+                                <Button x:Name="LightModeButton"
+                                        Content="☀️ Light Mode"
+                                        Height="35"
+                                        Margin="2"
+                                        Style="{StaticResource IconButtonStyle}"
+                                        HorizontalContentAlignment="Left"
+                                        Padding="10,5"
+                                        Click="LightMode_Click"
+                                        ToolTip="Switch to Light Mode"/>
+                                <Button x:Name="DarkModeButton"
+                                        Content="🌙 Dark Mode"
+                                        Height="35"
+                                        Margin="2"
+                                        Style="{StaticResource IconButtonStyle}"
+                                        HorizontalContentAlignment="Left"
+                                        Padding="10,5"
+                                        Click="DarkMode_Click"
+                                        ToolTip="Switch to Dark Mode"/>
+                                <Separator Margin="5,5,5,5"/>
+                                <Button x:Name="TestNotificationButton"
+                                        Content="🔔 Test Notifications"
+                                        Height="35"
+                                        Margin="2"
+                                        Style="{StaticResource IconButtonStyle}"
+                                        HorizontalContentAlignment="Left"
+                                        Padding="10,5"
+                                        Click="TestNotification_Click"
+                                        ToolTip="Test Notification System"/>
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+                </Grid>
             </StackPanel>
         </Grid>
 
@@ -388,27 +438,30 @@
                                         Click="NextDayButton_Click"/>
                             </StackPanel>
                             
-                            <StackPanel Orientation="Horizontal" Margin="0,-6,0,0">
+                            <!-- Search and Filter Row -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,-6,0,0">
+                                <!-- Search Section -->
+                                <Label Content="Search:" 
+                                       FontWeight="Bold" 
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextForegroundBrush}"
+                                       Margin="0,0,10,0"/>
                                 <TextBox x:Name="appointmentSearchBoxDay" 
-                                        Width="325" 
+                                        Width="250" 
                                         Height="30" 
-                                        Margin="-1,0,0,0"
-                                        HorizontalAlignment="Left"
+                                        Margin="0,0,30,0"
                                         Style="{StaticResource ThemedTextBox}"
                                         TextChanged="SearchBox_TextChanged"/>
-                                        
-                            </StackPanel>
-
-                            <!-- Category Filter Row -->
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                
+                                <!-- Filter Section -->
                                 <Label Content="Filter by Category:" 
                                        FontWeight="Bold" 
                                        VerticalAlignment="Center"
-                                       Foreground="{DynamicResource TextForegroundBrush}"/>
+                                       Foreground="{DynamicResource TextForegroundBrush}"
+                                       Margin="0,0,10,0"/>
                                 <ComboBox Name="categoryFilterComboBox" 
                                          Width="200" 
                                          Height="30" 
-                                         Margin="10,0,0,0"
                                          SelectionChanged="CategoryFilter_SelectionChanged">
                                     <ComboBoxItem Content="All Categories" Tag="0" IsSelected="True"/>
                                 </ComboBox>
@@ -474,28 +527,30 @@
                                         Click="NextWeekButton_Click"/>
                             </StackPanel>
                             
-                            <StackPanel>
-                                <TextBox
-                                        x:Name="appointmentSearchBoxWeek" 
-                                        Width="325" 
+                            <!-- Search and Filter Row -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <!-- Search Section -->
+                                <Label Content="Search:" 
+                                       FontWeight="Bold" 
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextForegroundBrush}"
+                                       Margin="0,0,10,0"/>
+                                <TextBox x:Name="appointmentSearchBoxWeek" 
+                                        Width="250" 
                                         Height="30" 
-                                        Margin="-1,0,0,0"
-                                        HorizontalAlignment="Left"
+                                        Margin="0,0,30,0"
                                         Style="{StaticResource ThemedTextBox}"
                                         TextChanged="SearchBox_TextChanged"/>
-                            </StackPanel>
-
-                            
-                            <!-- Category Filter Row -->
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                
+                                <!-- Filter Section -->
                                 <Label Content="Filter by Category:" 
                                        FontWeight="Bold" 
                                        VerticalAlignment="Center"
-                                       Foreground="{DynamicResource TextForegroundBrush}"/>
+                                       Foreground="{DynamicResource TextForegroundBrush}"
+                                       Margin="0,0,10,0"/>
                                 <ComboBox Name="categoryFilterComboBoxWeek" 
                                          Width="200" 
                                          Height="30" 
-                                         Margin="10,0,0,0"
                                          SelectionChanged="CategoryFilterWeek_SelectionChanged">
                                     <ComboBoxItem Content="All Categories" Tag="0" IsSelected="True"/>
                                 </ComboBox>

@@ -1,10 +1,9 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TimeWise.Models
 {
     /// <summary>
-    /// 笔记模型
+    /// 笔记模型 - 随时记入的笔记，不与特定日期绑定
     /// </summary>
     public class Note
     {
@@ -14,10 +13,6 @@ namespace TimeWise.Models
         [Required]
         [MaxLength(2000)]
         public string Content { get; set; } = string.Empty;
-
-        [Required]
-        [Column(TypeName = "DATE")]
-        public DateTime Date { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 

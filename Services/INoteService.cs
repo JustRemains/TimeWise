@@ -7,10 +7,11 @@ namespace TimeWise.Services
     /// </summary>
     public interface INoteService
     {
-        Task<IEnumerable<Note>> GetNotesByDateAsync(DateTime date);
+        Task<IEnumerable<Note>> GetAllNotesAsync();
         Task<Note> AddNoteAsync(Note note);
         Task<Note> UpdateNoteAsync(Note note);
         Task DeleteNoteAsync(int noteId);
         Task<Note?> GetNoteByIdAsync(int noteId);
+        Task ClearAllNotesAsync();
     }
 }
