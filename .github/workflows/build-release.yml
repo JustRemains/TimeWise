@@ -1,0 +1,109 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # 当推送以 v 开头的标签时触发（如 v1.0.0）
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET 8.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build and publish application
+      run: |
+        dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true -o ./dist
+        
+    - name: Get version from tag
+      id: version
+      run: |
+        if ("${{ github.ref }}" -match "refs/tags/(.*)") {
+          $version = $matches[1]
+        } else {
+          $version = "dev-${{ github.run_number }}"
+        }
+        Write-Output "VERSION=$version" >> $env:GITHUB_OUTPUT
+        Write-Host "Version: $version"
+      shell: powershell
+      
+    - name: Create release package
+      run: |
+        $version = "${{ steps.version.outputs.VERSION }}"
+        $fileName = "TimeWise-$version-windows-x64"
+        
+        # 创建文件夹
+        New-Item -ItemType Directory -Path "./$fileName" -Force
+        
+        # 复制可执行文件
+        Copy-Item "./dist/TimeWise.exe" "./$fileName/"
+        
+        # 创建 README 文件
+        @"
+        # TimeWise v$version
+        
+        ## 安装说明
+        1. 解压此文件到任意位置
+        2. 双击 TimeWise.exe 运行程序
+        
+        ## 系统要求
+        - Windows 10/11 (64位)
+        - 无需安装 .NET 运行时
+        
+        ## 功能特性
+        - 预约管理
+        - 通知提醒
+        - 日历视图
+        - 现代化界面
+        "@ | Out-File -FilePath "./$fileName/README.txt" -Encoding UTF8
+        
+        # 创建 ZIP 文件
+        Compress-Archive -Path "./$fileName/*" -DestinationPath "./$fileName.zip"
+      shell: powershell
+      
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/v')
+      with:
+        files: |
+          TimeWise-${{ steps.version.outputs.VERSION }}-windows-x64.zip
+        name: TimeWise ${{ steps.version.outputs.VERSION }}
+        body: |
+          🎉 **TimeWise ${{ steps.version.outputs.VERSION }} 发布**
+          
+          ## 📦 下载
+          - **Windows 64位**: TimeWise-${{ steps.version.outputs.VERSION }}-windows-x64.zip
+          
+          ## ✨ 功能特性
+          - 📅 智能预约管理
+          - 🔔 定时通知提醒，支持拖拽和倒计时
+          - 📊 清晰的日历视图
+          - 🎨 现代化用户界面
+          - 🗂️ 分类管理
+          
+          ## 🚀 安装方法
+          1. 下载对应系统的压缩包
+          2. 解压到任意文件夹
+          3. 运行 `TimeWise.exe`
+          
+          ## 📋 系统要求
+          - Windows 10 或更高版本 (64位)
+          - 无需额外安装 .NET 运行时
+          
+          ## 🛠️ 更新内容
+          请查看提交历史获取详细更改信息。
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

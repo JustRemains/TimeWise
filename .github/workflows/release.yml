@@ -1,0 +1,99 @@
+name: Release Build and Deploy
+
+on:
+  push:
+    tags:
+      - 'v*'  # 触发条件：推送标签（如 v1.0.0）
+  release:
+    types: [published]
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build application
+      run: dotnet build --configuration Release --no-restore
+      
+    - name: Publish application
+      run: |
+        dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true -o ./publish
+        
+    - name: Create release archive
+      run: |
+        $version = if ($env:GITHUB_REF -match 'refs/tags/(.*)') { $matches[1] } else { "latest" }
+        Compress-Archive -Path ./publish/TimeWise.exe -DestinationPath ./TimeWise-$version-win-x64.zip
+      shell: powershell
+      
+    - name: Get release version
+      id: get_version
+      run: |
+        if ($env:GITHUB_REF -match 'refs/tags/(.*)') {
+          $version = $matches[1]
+        } else {
+          $version = "latest"
+        }
+        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+      shell: powershell
+      
+    - name: Upload to Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          ./TimeWise-${{ steps.get_version.outputs.VERSION }}-win-x64.zip
+        body: |
+          ## TimeWise Release ${{ steps.get_version.outputs.VERSION }}
+          
+          ### Features
+          - 📅 Appointment management
+          - 🔔 Notification system with countdown
+          - 📊 Calendar view
+          - 🎨 Modern UI design
+          
+          ### System Requirements
+          - Windows 10/11 (64-bit)
+          - No additional runtime required (self-contained)
+          
+          ### Installation
+          1. Download the zip file below
+          2. Extract TimeWise.exe to your desired location
+          3. Run TimeWise.exe
+          
+          ### Changes in this release
+          See the commit history for detailed changes.
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    # 可选：构建多个目标平台
+    - name: Publish for Windows x86
+      run: |
+        dotnet publish -c Release -r win-x86 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true -o ./publish-x86
+        
+    - name: Create x86 release archive
+      run: |
+        $version = if ($env:GITHUB_REF -match 'refs/tags/(.*)') { $matches[1] } else { "latest" }
+        Compress-Archive -Path ./publish-x86/TimeWise.exe -DestinationPath ./TimeWise-$version-win-x86.zip
+      shell: powershell
+      
+    - name: Upload x86 to Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          ./TimeWise-${{ steps.get_version.outputs.VERSION }}-win-x86.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
