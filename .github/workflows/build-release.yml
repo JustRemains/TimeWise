@@ -82,29 +82,29 @@ jobs:
             TimeWise-${{ steps.version.outputs.VERSION }}-windows-x64.zip
           name: TimeWise ${{ steps.version.outputs.VERSION }}
           body: |
-            🎉 **TimeWise ${{ steps.version.outputs.VERSION }} 发布**
+            🎉 **TimeWise ${{ steps.version.outputs.VERSION }} Release**
             
-            ## 📦 下载
-            - **Windows 64位**: TimeWise-${{ steps.version.outputs.VERSION }}-windows-x64.zip
+            ## 📦 Download
+            - **Windows 64bit**: TimeWise-${{ steps.version.outputs.VERSION }}-windows-x64.zip
             
-            ## ✨ 功能特性
-            - 📅 智能预约管理
-            - 🔔 定时通知提醒，支持拖拽和倒计时
-            - 📊 清晰的日历视图
-            - 🎨 现代化用户界面
-            - 🗂️ 分类管理
-            
-            ## 🚀 安装方法
-            1. 下载对应系统的压缩包
-            2. 解压到任意文件夹
-            3. 运行 `TimeWise.exe`
-            
-            ## 📋 系统要求
-            - Windows 10 或更高版本 (64位)
-            - 无需额外安装 .NET 运行时
-            
-            ## 🛠️ 更新内容
-            请查看提交历史获取详细更改信息。
+            ## Features
+            - 📅  Intelligent appointment management
+            - 🔔  Timed notifications with drag-and-drop and countdown support
+            - 📊  Clear calendar view
+            - 🎨  Modern user interface
+            - 🗂️  Category management
+
+            ## 🚀 Installation
+            1. Download the corresponding system package
+            2. Extract to any folder
+            3. Run `TimeWise.exe`
+
+            ## 📋 System Requirements
+            - Windows 10 or higher (64bit)
+            - No additional .NET runtime installation required
+
+            ## 🛠️ Changelog
+            Please refer to the commit history for detailed changes.
           draft: false
           prerelease: false
         env:
