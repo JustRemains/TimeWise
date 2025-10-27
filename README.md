@@ -79,9 +79,9 @@ TimeWise/
 This project follows Agile/Scrum methodology with a 7-week development cycle:
 
 - [x] Sprint 1 (Weeks 1-2): Foundation and Core Functionality
-- [ ] Sprint 2 (Weeks 3-4): Enhanced Views and Basic Operations
-- [ ] Sprint 3 (Weeks 5-6): Search, Categories, and Data Export
-- [ ] Sprint 4 (Week 7): Polish, Notifications, and Settings
+- [x] Sprint 2 (Weeks 3-4): Enhanced Views and Basic Operations
+- [x] Sprint 3 (Weeks 5-6): Search, Categories, and Data Export
+- [x] Sprint 4 (Week 7): Polish, Notifications, and Settings
       
 ### Build Instructions
 ```
